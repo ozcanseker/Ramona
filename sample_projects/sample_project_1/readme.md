@@ -1,0 +1,1 @@
+just a general project with tables etc to test all functionality of the generator

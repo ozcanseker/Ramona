@@ -1,0 +1,18 @@
+workspace_config:
+  models_dir: ./models
+
+  globals:
+    bronze_tables_path: globals("tables_path") + "./bronze/"
+    sql_path: "./sql/"
+    tables_path: globals("sql_path") + "./tables/"
+    test_global_list: ["1234", "4321"]
+    models_dir: parent()
+
+  
+  test_list:
+    - test
+    - ...globals("test_global_list")
+    - test
+    - globals("sql_path")
+
+    
