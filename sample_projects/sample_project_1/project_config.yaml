@@ -3,6 +3,8 @@ project_config:
   models_dir: ./models
   templates_dir: ./templates
 
+  always_clean:
+    - project("sql_output_dir")
 
   # Non protected keywords
   # Some global variables

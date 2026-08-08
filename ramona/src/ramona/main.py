@@ -8,11 +8,12 @@ import re
 import ast
 
 # Own libs
-import constants
-from jinja import create_jinja2_env
-from resolver import ResolveContext, resolve
-import singletons.application_arguments as application_arguments
-import singletons.project_config as project_config
+from . import constants
+from .jinja import create_jinja2_env
+from .resolver import ResolveContext, resolve
+
+from .singletons import application_arguments
+from .singletons import project_config
 
 
 def main():
@@ -28,17 +29,18 @@ def main():
     # Get all template config, aka everything that has to be generated
     list_of_model_configs=get_model_configs(all_model_config_file_paths_abs)
 
-    for model_config in list_of_model_configs:
-        # print(template_config)
-        print(json.dumps (model_config, indent=4, sort_keys=True))
-        # generate all templates
+    # for model_config in list_of_model_configs:
+    #     # print(template_config)
+    #     print(json.dumps (model_config, indent=4, sort_keys=True))
+    #     # generate all templates
 
     generate_templates(list_of_model_configs)
 
 def generate_templates(list_of_model_configs):
-    templates_dir=get_abs_path_of_file_and_validate(
+    templates_dir=get_abs_path_and_validate(
         project_config.get().project_config[constants.PROJECT_CONFIG_TEMPLATES_DIR_KEY],
         project_config.get().project_abs_dir)
+
     jinja2_env = create_jinja2_env(templates_dir)
 
     clean_folders_to_be_used(list_of_model_configs)
@@ -52,14 +54,16 @@ def generate_templates(list_of_model_configs):
 def generate_based_on_template(model, generation_config, jinja2_env: Environment):
     # Get the output
     template = jinja2_env.get_template(generation_config[constants.GENERATION_CONFIG_TEMPLATE_KEY])
-    output = template.render(model={})
+    output = template.render(model=model)
 
     # The output dir 
     output_dir=Path(model[constants.MODEL_CONFIG_OUTPUT_DIR_KEYWORD])
 
     # Name of the to be written file
     file_name=""
-    if constants.MODEL_CONFIG_NAME_KEYWORD in model:
+    if constants.MODEL_CONFIG_NAME_FILENAME in model:
+        file_name=model[constants.MODEL_CONFIG_NAME_FILENAME]
+    elif constants.MODEL_CONFIG_NAME_KEYWORD in model:
         file_name=model[constants.MODEL_CONFIG_NAME_KEYWORD]
     elif constants.MODEL_CONFIG_ID_KEYWORD in model:
         file_name=model[constants.MODEL_CONFIG_ID_KEYWORD]
@@ -70,12 +74,15 @@ def generate_based_on_template(model, generation_config, jinja2_env: Environment
     file_extension=Path(template.name).with_suffix("").suffix
 
     # Full path for to be written file:
-    file_path=Path(f"{output_dir}{file_name}{file_extension}")
+    file_path=Path(f"{output_dir.joinpath(file_name)}{file_extension}")
 
     write_file(file_path , output)
 
 def write_file(location: Path, content):
     parent_dir=location.parent
+
+    if location.exists():
+        raise Exception(f"file is already used {location}")
 
     if not parent_dir.exists():
         parent_dir.mkdir(exist_ok=True, parents=True)
@@ -98,8 +105,14 @@ def clean_folders_to_be_used(list_of_model_configs: list[Path]):
 
         folders_to_be_cleaned.add(output_dir)
 
+    if constants.PROJECT_CONFIG_ALWAYS_CLEAN_KEY in project_config.get().project_config:
+        for always_to_be_cleaned_path in project_config.get_key(constants.PROJECT_CONFIG_ALWAYS_CLEAN_KEY):
+            abs_path=get_abs_path(always_to_be_cleaned_path, project_config.get().project_abs_dir)
+            folders_to_be_cleaned.add(abs_path)
+
     for folder in folders_to_be_cleaned:
-        shutil.rmtree(folder)
+        if folder.exists():
+            shutil.rmtree(folder)
     
 
 def get_model_configs(all_model_config_file_paths_abs: list[Path]):
@@ -123,7 +136,7 @@ def validate_and_correct_model_config(model: dict):
     # Check if output_dir is valid 
     # Also correct it to an abs path
     if constants.MODEL_CONFIG_OUTPUT_DIR_KEYWORD in model:
-        output_dir=get_abs_path_of_file(model[constants.MODEL_CONFIG_OUTPUT_DIR_KEYWORD], project_config.get().project_abs_dir)
+        output_dir=get_abs_path(model[constants.MODEL_CONFIG_OUTPUT_DIR_KEYWORD], project_config.get().project_abs_dir)
 
         if not project_config.get().project_abs_dir in output_dir.parents:
             print(json.dumps(model, indent=4, sort_keys=True))
@@ -134,8 +147,6 @@ def validate_and_correct_model_config(model: dict):
         # Set the output dir as an abs path
         model[constants.MODEL_CONFIG_OUTPUT_DIR_KEYWORD]=str(output_dir)
         
-    
-
 
 def create_squashed_template_configs(yaml_file_path, all_yaml_configs_paths_in_model, model_config_file_path_abs):
     parent_yaml_files_sorted = parent_yaml_files_sorted_highest_first(yaml_file_path, all_yaml_configs_paths_in_model, model_config_file_path_abs)
@@ -206,7 +217,7 @@ def get_all_yaml_files_in_sub_dirs(folder: Path) -> list[Path]:
 
 
 def get_all_models_config_files(models_dir: Path | str) -> list[Path]:
-    models_dir=get_abs_path_of_file_and_validate(
+    models_dir=get_abs_path_and_validate(
         models_dir[constants.PROJECT_CONFIG_MODELS_DIR_KEY], 
         project_config.get().project_abs_dir
         )
@@ -244,7 +255,7 @@ def setup_workplace_singleton(project_config_abs_path: Path):
     
 def get_abs_generator_config_path(project_config_path_str: str):
     try:
-        project_config_path: Path=get_abs_path_of_file_and_validate(project_config_path_str)
+        project_config_path: Path=get_abs_path_and_validate(project_config_path_str)
 
         if project_config_path.is_file():
             return project_config_path
@@ -254,7 +265,7 @@ def get_abs_generator_config_path(project_config_path_str: str):
         raise Exception(f"argument for project_config_path is not valid, {project_config_path_str} does not point to a valid file.")
 
 
-def get_abs_path_of_file(filepath: str|Path, abs_base_dir:Path=None) -> Path:
+def get_abs_path(filepath: str|Path, abs_base_dir:Path=None) -> Path:
     # Create copy of object, to not modify original object
     filepath = Path(filepath)
 
@@ -266,8 +277,8 @@ def get_abs_path_of_file(filepath: str|Path, abs_base_dir:Path=None) -> Path:
 
     return filepath
 
-def get_abs_path_of_file_and_validate(filepath: str|Path, abs_base_dir:Path=None) -> Path:
-    filepath = get_abs_path_of_file(filepath, abs_base_dir)
+def get_abs_path_and_validate(filepath: str|Path, abs_base_dir:Path=None) -> Path:
+    filepath = get_abs_path(filepath, abs_base_dir)
 
     if not filepath.exists():
         raise Exception(f"{filepath} file path does not exist")

@@ -1,7 +1,7 @@
 import os
 import re
 from dataclasses import dataclass
-import constants
+from . import constants
 
 EXPRESSION_REGEX = re.compile(
     r'(?P<unpack>\.\.\.)?'

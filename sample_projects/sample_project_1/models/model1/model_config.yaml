@@ -1,2 +1,4 @@
 model_config:
   model_name: "model1"
+
+  database: MODEL1

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import argparse
-import constants
+from .. import constants
 
 # Hidden variable for arguments
 _arguments: ApplicationArguments | None = None

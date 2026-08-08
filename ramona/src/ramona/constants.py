@@ -6,6 +6,9 @@ MODEL_CONFIG_FILE_NAME = "model_config.yaml"
 # So be carefull using these
 PROJECT_CONFIG_MODELS_DIR_KEY = "models_dir"
 PROJECT_CONFIG_TEMPLATES_DIR_KEY = "templates_dir"
+PROJECT_CONFIG_ALWAYS_CLEAN_KEY = "always_clean"
+
+
 
 MODEL_CONFIG_MODELS_KEYWORD = "models"
 MODEL_CONFIG_OUTPUT_DIR_KEYWORD = "output_dir"
@@ -13,6 +16,7 @@ MODEL_CONFIG_GENERATION_CONFIG = "generation_config"
 
 MODEL_CONFIG_ID_KEYWORD = "id"
 MODEL_CONFIG_NAME_KEYWORD = "name"
+MODEL_CONFIG_NAME_FILENAME = "file_name"
 
 GENERATION_CONFIG_TEMPLATE_KEY = "template"
 

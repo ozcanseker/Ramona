@@ -50,3 +50,11 @@ def get() -> ProjectConfig:
         raise Exception("project_config not set")
 
     return _project_config
+
+def get_key(key) -> ProjectConfig:
+    global _project_config
+
+    if not _project_config or not _project_config.project_config:
+        raise Exception("project_config not set")
+
+    return _project_config.project_config[key]
