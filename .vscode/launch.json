@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": "-wcp \".\\sample_projects\\sample_project_1\\workspace_config.yaml\""
+            "args": "-wcp \".\\sample_projects\\sample_project_1\\project_config.yaml\""
         }
     ]
 }

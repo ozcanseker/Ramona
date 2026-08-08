@@ -8,7 +8,7 @@ _arguments: ApplicationArguments | None = None
 
 @dataclass(frozen=True)
 class ApplicationArguments:
-    workspace_config_path: str
+    project_config_path: str
 
 
 def get() -> ApplicationArguments:
@@ -18,17 +18,17 @@ def get() -> ApplicationArguments:
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
-            "-wcp", 
-            "--workspace-config-path",
-            help="the filepath of the workspace config file, abs and rel are both supported.",
-            default=f"./{constants.WORKSPACE_CONFIG_FILE_NAME}",
-            dest="workspace_config_path"
+            "-pcp", 
+            "--project-config-path",
+            help="the filepath of the project config file, abs and rel are both supported.",
+            default=f"./{constants.PROJECT_CONFIG_FILE_NAME}",
+            dest="project_config_path"
         )
 
         args = parser.parse_args()
 
         _arguments = ApplicationArguments(
-            workspace_config_path=args.workspace_config_path
+            project_config_path=args.project_config_path
         )
 
     return _arguments

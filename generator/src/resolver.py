@@ -1,7 +1,7 @@
 import os
 import re
 from dataclasses import dataclass
-
+import constants
 
 EXPRESSION_REGEX = re.compile(
     r'(?P<unpack>\.\.\.)?'
@@ -18,11 +18,15 @@ EXPRESSION_REGEX = re.compile(
 
 @dataclass(frozen=True)
 class ResolveContext:
-    globals: dict
-    parent: dict | None = None
-    current_key: str | None = None
+    # These are all dictionaries used to reference
+    project: dict
+    model: dict | None = None
     parent_dict: dict | None = None
     parent_yaml: dict | None = None
+    this: dict | None = None
+
+    # Extra variables that are needed in 
+    current_key: str | None = None
 
 
 # ============================================================
@@ -41,10 +45,10 @@ def resolve(object_to_resolve, context: ResolveContext):
             result[key] = resolve(
                 value,
                 ResolveContext(
-                    globals=context.globals,
-                    parent=object_to_resolve,
-                    parent_dict=context.parent,
+                    project=context.project,
+                    model=context.model,
                     current_key=key,
+                    this=object_to_resolve
                 )
             )
 
@@ -87,12 +91,18 @@ def resolve_expression(value: str, context: ResolveContext):
     # These is a loop here because it is not guarenteed that the solved string also has references
     # So keep resolving until string does not change anymore
     previous = None
+    iterations=0
     while previous != value:
         previous = value
         value = EXPRESSION_REGEX.sub(
             lambda match: replace(match, context),
             value
         )
+
+        iterations+=1
+        if iterations > constants.MAX_ITERATIONS_RESOLVER:
+            raise Exception(f"Circular dependency detected in {value}")
+
 
     # Split on the +
     # Strip all the "
@@ -104,7 +114,6 @@ def resolve_expression(value: str, context: ResolveContext):
 
 
 def replace(match, context: ResolveContext):
-
     result = resolve_match(match, context)
 
     if not isinstance(result, str):
@@ -125,16 +134,24 @@ def resolve_match(match, context: ResolveContext):
 
     return resolver(match.group("name"), context)
 
-
 # ============================================================
 # Individual resolvers
 # ============================================================
 
-def resolve_globals(name: str, context: ResolveContext):
-    if name not in context.globals:
+def resolve_project(name: str, context: ResolveContext):
+    if name not in context.project:
         raise KeyError( f'Global "{name}" does not exist')
 
-    value = context.globals[name]
+    value = context.project[name]
+
+    return value
+
+
+def resolve_model(name: str, context: ResolveContext):
+    if name not in context.model:
+        raise KeyError( f'Global "{name}" does not exist')
+
+    value = context.model[name]
 
     return value
 
@@ -145,19 +162,19 @@ def resolve_parent_yaml(name: str, context: ResolveContext):
 
     key = name or context.current_key
 
-    if key not in context.parent:
+    if key not in context.parent_yaml:
         raise KeyError(f'Parent yaml does not contain "{key}"')
 
     return context.parent_yaml[key]
 
 
 def resolve_parent(name: str | None,context: ResolveContext ):
-    if context.parent is None:
+    if context.parent_dict is None:
         raise ValueError("No parent available")
 
     key = name or context.current_key
 
-    if key not in context.parent:
+    if key not in context.parent_dict:
         raise KeyError(f'Parent does not contain "{key}"')
 
     return context.parent_dict[key]
@@ -169,14 +186,26 @@ def resolve_env(name: str,context: ResolveContext):
     
     return os.environ[name]
 
+def resolve_this(name: str,context: ResolveContext):
+    if context.this is None:
+        raise ValueError("No this available")
+
+    if name not in context.this:
+        raise KeyError(f'No variables called "{name}"')
+
+    return context.this[name]
+
+
 
 # ============================================================
 # Resolver registry
 # ============================================================
 
 RESOLVERS = {
-    "globals": resolve_globals,
+    "project": resolve_project,
+    "model": resolve_model,
     "env": resolve_env,
     "parent": resolve_parent,
-    "parent_yaml": resolve_parent_yaml
+    "parent_yaml": resolve_parent_yaml,
+    "this": resolve_this
 }

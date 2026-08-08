@@ -1,0 +1,12 @@
+project_config:
+  # Must variables
+  models_dir: ./models
+  templates_dir: ./templates
+
+
+  # Non protected keywords
+  # Some global variables
+  project_name: sample_project_1
+
+  # Paths
+  sql_output_dir: "./sql/"

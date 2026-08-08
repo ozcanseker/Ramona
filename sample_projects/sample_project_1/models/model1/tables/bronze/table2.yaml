@@ -1,0 +1,9 @@
+model_config:
+  models:
+    - id: table2
+      name: this("id")
+      columns:
+        - id: column1
+          datatype: VARCHAR(1234)
+        - id: column2
+          datatype: VARCHAR(1234)

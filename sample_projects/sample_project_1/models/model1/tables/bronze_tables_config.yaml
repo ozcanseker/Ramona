@@ -1,0 +1,4 @@
+model_config.yaml:
+  output_dir: project("sql_output_dir") + model("model_name") + "/bronze" 
+  generation_config:
+    - template: "./bronze_table.sql.jinja2"

@@ -1,0 +1,2 @@
+model_config.yaml:
+  output_dir: project("project_name") + "/bronze" 
