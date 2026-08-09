@@ -9,6 +9,7 @@ class ProjectConfig:
 
 _project_config: ProjectConfig = None
 
+
 def set_path(project_config_path: Path):
     global _project_config
 
@@ -20,6 +21,7 @@ def set_path(project_config_path: Path):
 
     _project_config.project_config_abs_path = project_config_path
 
+
 def set_dir(project_dir: Path):
     global _project_config
 
@@ -30,6 +32,7 @@ def set_dir(project_dir: Path):
         raise Exception("project_config already set")
 
     _project_config.project_abs_dir = project_dir
+
 
 def set_config(project_config: dict):
     global _project_config
@@ -50,6 +53,7 @@ def get() -> ProjectConfig:
         raise Exception("project_config not set")
 
     return _project_config
+
 
 def get_key(key) -> ProjectConfig:
     global _project_config

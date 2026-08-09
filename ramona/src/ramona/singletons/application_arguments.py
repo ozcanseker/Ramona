@@ -33,12 +33,12 @@ def get() -> ApplicationArguments:
         )
 
         generate_parser = subparsers.add_parser(
-            constants.GENERATE_COMMAND,
+            constants.commands.GENERATE,
             help="Generate output from YAML models",
         ) 
 
         check_parser = subparsers.add_parser(
-            constants.MODELCHECK_COMMAND,
+            constants.commands.MODELCHECK,
             help="Run model checks",
         )
 

@@ -1,6 +1,8 @@
-#arguments
-GENERATE_COMMAND="generate"
-MODELCHECK_COMMAND="modelcheck"
+class Commands:
+    GENERATE = "generate"
+    MODELCHECK = "modelcheck"
+
+commands = Commands()
 
 # File names
 PROJECT_CONFIG_FILE_NAME = "project_config.yaml"

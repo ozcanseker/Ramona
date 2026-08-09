@@ -1,5 +1,5 @@
+from ramona.modelcheck import modelcheck, CheckResult
 
-from ramona.checks import {modelcheck, CheckResult}
 
 @modelcheck(
         name="Model: check types",
