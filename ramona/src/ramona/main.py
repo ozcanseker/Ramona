@@ -8,9 +8,9 @@ import re
 import ast
 
 # Own libs
-from . import constants
-from .jinja import create_jinja2_env
-from .resolver import ResolveContext, resolve
+from .utils import constants
+from .generator.jinja import create_jinja2_env
+from .model.resolver import ResolveContext, resolve
 
 from .singletons import application_arguments
 from .singletons import project_config
@@ -34,7 +34,13 @@ def main():
     #     print(json.dumps (model_config, indent=4, sort_keys=True))
     #     # generate all templates
 
-    generate_templates(list_of_model_configs)
+    if application_arguments.get().command == constants.GENERATE_COMMAND:
+        generate_templates(list_of_model_configs)
+    elif application_arguments.get.command == constants.MODELCHECK_COMMAND:
+        raise NotImplementedError("that command is not implemented")
+    else:
+        raise NotImplementedError("that command is not implemented")
+
 
 def generate_templates(list_of_model_configs):
     templates_dir=get_abs_path_and_validate(

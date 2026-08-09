@@ -1,3 +1,8 @@
+#arguments
+GENERATE_COMMAND="generate"
+MODELCHECK_COMMAND="modelcheck"
+
+# File names
 PROJECT_CONFIG_FILE_NAME = "project_config.yaml"
 MODEL_CONFIG_FILE_NAME = "model_config.yaml"
 

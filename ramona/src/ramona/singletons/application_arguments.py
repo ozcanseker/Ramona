@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import argparse
-from .. import constants
+from ..utils import constants
 
 # Hidden variable for arguments
 _arguments: ApplicationArguments | None = None
@@ -9,6 +9,7 @@ _arguments: ApplicationArguments | None = None
 @dataclass(frozen=True)
 class ApplicationArguments:
     project_config_path: str
+    command: str
 
 
 def get() -> ApplicationArguments:
@@ -25,10 +26,27 @@ def get() -> ApplicationArguments:
             dest="project_config_path"
         )
 
+        subparsers = parser.add_subparsers(
+            title="commands",
+            dest="command",
+            required=True,
+        )
+
+        generate_parser = subparsers.add_parser(
+            constants.GENERATE_COMMAND,
+            help="Generate output from YAML models",
+        ) 
+
+        check_parser = subparsers.add_parser(
+            constants.MODELCHECK_COMMAND,
+            help="Run model checks",
+        )
+
         args = parser.parse_args()
 
         _arguments = ApplicationArguments(
-            project_config_path=args.project_config_path
+            project_config_path=args.project_config_path,
+            command=args.command
         )
 
     return _arguments
