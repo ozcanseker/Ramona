@@ -1,6 +1,7 @@
 # Ramona
-Generator for ingestion en loading of datasources, before using dbt
+Generator and model validator for models based in yaml files.
 
+<img src="docs/images/Naamloos.png" width="192" height="220" style="image-rendering: pixelated;">
 
 # Keywords in yaml files
 
