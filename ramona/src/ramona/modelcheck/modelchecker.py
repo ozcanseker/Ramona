@@ -102,7 +102,7 @@ def _run_modelchecks(modelchecks: list[ModelCheck], list_of_models):
 
 
 def get_modelchecks_folder() -> Path:
-    rel_folder = project_config.get().project_config[constants.project_config_keys.MODELCHECKS_KEY]
+    rel_folder = project_config.get().project_config[constants.project_config_keys.MODELCHECKS]
     return get_abs_path_and_validate_if_exists(rel_folder, project_config.get().project_abs_dir)
 
 

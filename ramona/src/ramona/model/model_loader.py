@@ -27,7 +27,7 @@ def get_model_configs():
 
 def get_all_models_config_files(models_dir: Path | str) -> list[Path]:
     models_dir=get_abs_path_and_validate_if_exists(
-        models_dir[constants.project_config_keys.MODELS_DIR_KEY], 
+        models_dir[constants.project_config_keys.MODELS_DIR], 
         project_config.get().project_abs_dir
         )
     
@@ -79,6 +79,9 @@ def create_squashed_template_configs(yaml_file_path, all_yaml_configs_paths_in_m
             final_config=squash_dicts(final_config, parent_yaml_config, model_config_config)
 
         # Fully squashed dict
+        parent_dict=dict(yaml_config)
+        del parent_dict[constants.model_keys.MODELS]
+        final_config = squash_dicts(final_config, parent_dict ,model_config_config)
         final_config = squash_dicts(final_config, model, model_config_config)
         all_model_configs.append(final_config)
 

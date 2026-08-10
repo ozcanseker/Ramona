@@ -186,6 +186,7 @@ def resolve_env(name: str,context: ResolveContext):
     
     return os.environ[name]
 
+
 def resolve_this(name: str,context: ResolveContext):
     if context.this is None:
         raise ValueError("No this available")
@@ -194,7 +195,6 @@ def resolve_this(name: str,context: ResolveContext):
         raise KeyError(f'No variables called "{name}"')
 
     return context.this[name]
-
 
 
 # ============================================================

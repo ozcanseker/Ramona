@@ -9,10 +9,10 @@ commands = Commands()
 # These keywords that are available in the yaml are also used in the application
 # So be carefull using these
 class ProjectConfigKeys:
-    MODELS_DIR_KEY = "models_dir"
-    TEMPLATES_DIR_KEY = "templates_dir"
-    ALWAYS_CLEAN_KEY = "always_clean"
-    MODELCHECKS_KEY = "modelchecks_dir"
+    MODELS_DIR = "models_dir"
+    TEMPLATES_DIR = "templates_dir"
+    ALWAYS_CLEAN = "always_clean"
+    MODELCHECKS = "modelchecks_dir"
 
 project_config_keys = ProjectConfigKeys()
 
@@ -28,9 +28,9 @@ class ModelKeys:
     OUTPUT_DIR = "output_dir"
     GENERATION_CONFIG = "generation_config"
 
-    MODEL_ID = "id"
-    MODEL_NAME = "name"
-    MODEL_FILENAME = "file_name"
+    ID = "id"
+    NAME = "name"
+    FILENAME = "file_name"
 
     
     ABS_FILE_PATH = "absolute_file_path"

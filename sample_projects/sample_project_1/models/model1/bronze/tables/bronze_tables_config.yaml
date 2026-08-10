@@ -1,6 +1,4 @@
 model_config.yaml:
-  # Physical metadata
-  schema: BRONZE
   type: table
 
   # Generation config 
