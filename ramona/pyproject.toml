@@ -1,9 +1,0 @@
-[project]
-name = "ramona"
-version = "0.1.0"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[project.scripts]
-ramona = "ramona.main:main"

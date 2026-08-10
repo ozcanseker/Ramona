@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ramona"
+version = "0.1.0"
+description = "YAML generation and model checking framework"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "Jinja2==3.1.6",
+    "PyYAML==6.0.3",
+    "rich==15.0.0",
+]
+
+[project.scripts]
+ramona = "ramona.main:main"
+
+[tool.setuptools.packages.find]
+where = ["ramona/src"]
