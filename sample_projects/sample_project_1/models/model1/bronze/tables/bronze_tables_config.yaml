@@ -1,6 +1,7 @@
 model_config.yaml:
   # Physical metadata
   schema: BRONZE
+  type: table
 
   # Generation config 
   output_dir: project("sql_output_dir") + model("model_name") + "/bronze" 

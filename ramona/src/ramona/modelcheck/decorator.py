@@ -1,21 +1,21 @@
-from collections.abc import Callable
-
-from .registry import registry, ModelCheck
-
+from ramona.modelcheck.classes.types import Condition
+from ramona.modelcheck.classes.ModelCheckClass import ModelCheck
 
 def modelcheck(
     name: str,
     description: str | None = None,
+    severity: str | None = None,
+    conditions: list[Condition] | None = None,
 ):
-    def decorator(function: Callable):
+    def decorator(function):
 
-        check = ModelCheck(
+        function.__modelcheck__ = ModelCheck(
             name=name,
             description=description,
+            severity=severity,
             function=function,
+            conditions=conditions
         )
-
-        registry.register(check)
 
         return function
 

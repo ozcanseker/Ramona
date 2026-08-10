@@ -1,0 +1,10 @@
+model_config.yaml:
+  # Physical metadata
+  schema: BRONZE
+ 
+  generation_config:
+    - template: "./bronze_table.sql.jinja2"
+
+  models:
+    - id: dag_json
+      type: dag

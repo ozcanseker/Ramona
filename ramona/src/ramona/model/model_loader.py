@@ -27,13 +27,13 @@ def get_model_configs():
 
 def get_all_models_config_files(models_dir: Path | str) -> list[Path]:
     models_dir=get_abs_path_and_validate_if_exists(
-        models_dir[constants.PROJECT_CONFIG_MODELS_DIR_KEY], 
+        models_dir[constants.project_config_keys.MODELS_DIR_KEY], 
         project_config.get().project_abs_dir
         )
     
     all_model_dirs:list[Path]=[]
 
-    files = models_dir.rglob(constants.MODEL_CONFIG_FILE_NAME)
+    files = models_dir.rglob(constants.filenames.MODEL_CONFIG)
     for f in files:
         all_model_dirs.append(f)
 
@@ -49,8 +49,8 @@ def get_all_models_config_files(models_dir: Path | str) -> list[Path]:
 def validate_and_correct_model_config(model: dict):
     # Check if output_dir is valid 
     # Also correct it to an abs path
-    if constants.MODEL_CONFIG_OUTPUT_DIR_KEYWORD in model:
-        output_dir=get_abs_path(model[constants.MODEL_CONFIG_OUTPUT_DIR_KEYWORD], project_config.get().project_abs_dir)
+    if constants.model_keys.OUTPUT_DIR in model:
+        output_dir=get_abs_path(model[constants.model_keys.OUTPUT_DIR], project_config.get().project_abs_dir)
 
         if not project_config.get().project_abs_dir in output_dir.parents:
             print(json.dumps(model, indent=4, sort_keys=True))
@@ -59,7 +59,7 @@ def validate_and_correct_model_config(model: dict):
             )
 
         # Set the output dir as an abs path
-        model[constants.MODEL_CONFIG_OUTPUT_DIR_KEYWORD]=str(output_dir)
+        model[constants.model_keys.OUTPUT_DIR]=str(output_dir)
 
 
 def create_squashed_template_configs(yaml_file_path, all_yaml_configs_paths_in_model, model_config_file_path_abs):
@@ -68,10 +68,10 @@ def create_squashed_template_configs(yaml_file_path, all_yaml_configs_paths_in_m
     model_config_config=read_yaml(model_config_file_path_abs)
     all_model_configs=[]
     
-    if not yaml_config or constants.MODEL_CONFIG_MODELS_KEYWORD not in yaml_config:
+    if not yaml_config or constants.model_keys.MODELS not in yaml_config:
         return []
 
-    for model in yaml_config[constants.MODEL_CONFIG_MODELS_KEYWORD]:
+    for model in yaml_config[constants.model_keys.MODELS]:
         final_config = dict(project_config.get().project_config)
 
         for parent_yaml_file_path in parent_yaml_files_sorted:
@@ -81,6 +81,8 @@ def create_squashed_template_configs(yaml_file_path, all_yaml_configs_paths_in_m
         # Fully squashed dict
         final_config = squash_dicts(final_config, model, model_config_config)
         all_model_configs.append(final_config)
+
+        final_config[constants.model_keys.ABS_FILE_PATH]=yaml_file_path
 
     return all_model_configs
 

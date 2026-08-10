@@ -2,6 +2,7 @@ project_config:
   # Must variables
   models_dir: ./models
   templates_dir: ./templates
+  modelchecks_dir: ./modelchecks
 
   always_clean:
     - project("sql_output_dir")

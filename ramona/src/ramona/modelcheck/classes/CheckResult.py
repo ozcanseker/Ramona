@@ -1,24 +1,27 @@
 from dataclasses import dataclass
+from enum import Enum
+
+
+class CheckStatus(str, Enum):
+    PASSED = "passed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
 
 
 @dataclass
 class CheckResult:
-    passed: bool
+    status: CheckStatus
     message: str | None = None
-    path: str | None = None
+    model: dict | None = None
 
     @classmethod
     def success(cls):
-        return cls(passed=True)
+        return cls(status=CheckStatus.PASSED)
 
     @classmethod
-    def failure(
-        cls,
-        message: str,
-        path: str | None = None,
-    ):
-        return cls(
-            passed=False,
-            message=message,
-            path=path,
-        )
+    def failure(cls, message: str):
+        return cls(status=CheckStatus.FAILED, message=message)
+
+    @classmethod
+    def skipped(cls):
+        return cls(status=CheckStatus.SKIPPED)

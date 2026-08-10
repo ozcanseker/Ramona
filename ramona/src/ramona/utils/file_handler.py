@@ -1,8 +1,8 @@
+import importlib
 from pathlib import Path
 import shutil
+from types import ModuleType
 
-from ramona.singletons import project_config
-from ramona.utils import constants
 import yaml
 
 
@@ -60,7 +60,6 @@ def clean_folders( *paths: Path | str | list[Path|str] | set[Path|str]):
 
     for folder in normalize_paths:
         if folder.exists() and folder.is_dir():
-            print(folder)
             shutil.rmtree(folder)
 
 
@@ -85,3 +84,15 @@ def read_yaml(filepath):
     _, inner_dict = yaml_dict.popitem()
 
     return inner_dict
+
+
+def load_module(module_name, path: Path) -> ModuleType:
+    spec = importlib.util.spec_from_file_location(module_name, path)
+
+    if spec is None or spec.loader is None:
+        raise ImportError( f"Could not load module from {path}" )
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    return module
