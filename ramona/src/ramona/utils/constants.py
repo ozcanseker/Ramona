@@ -39,7 +39,7 @@ model_keys = ModelKeys()
 
 
 class FileNames:
-    PROJECT_CONFIG = "project_config.yaml"
+    PROJECT_CONFIG = "ramona.yaml"
     MODEL_CONFIG = "model_config.yaml"
 
 filenames = FileNames()
