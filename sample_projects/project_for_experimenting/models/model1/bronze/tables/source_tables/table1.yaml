@@ -1,5 +1,8 @@
 model_config:
-  models:
+  test: "test"
+  generated_paths: "tst"
+
+  objects:
     - id: table1
       name: table_with_alias
       columns:

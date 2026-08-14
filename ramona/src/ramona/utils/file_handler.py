@@ -6,6 +6,39 @@ from types import ModuleType
 import yaml
 
 
+def get_abs_ramona_config_path(project_config_path_str: str):
+    try:
+        project_config_path: Path=get_abs_path_and_validate_is_file(project_config_path_str)
+
+        if project_config_path.is_file():
+            return project_config_path
+
+        raise Exception
+    except Exception as e:
+        raise Exception(f"argument for ramona config path is not valid, {project_config_path_str} does not point to a valid file.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def get_abs_path_and_validate_is_file(filepath: str|Path, abs_base_dir:Path=None) -> Path:
+    filepath: Path = get_abs_path_and_validate_if_exists(filepath, abs_base_dir)
+
+    if not filepath.is_file():
+        raise Exception(f"{filepath} is not a file.")
+
+    return filepath
+
+
 def get_abs_path_and_validate_if_exists(filepath: str|Path, abs_base_dir:Path=None) -> Path:
     filepath: Path = get_abs_path(filepath, abs_base_dir)
 
@@ -73,17 +106,36 @@ def get_all_yaml_files_in_dir_and_sub_dirs(folder: Path) -> list[Path]:
     return all_yaml_files
 
 
-def read_yaml(filepath):
-    with open(filepath, 'r') as file:
-        yaml_dict:dict = yaml.safe_load(file)
+def read_yaml_from_string(yaml_string: str):
+    yaml_dict:dict = yaml.safe_load(yaml_string)
 
     if not yaml_dict:
-        return None
+        raise Exception("problem reading from string")
 
     # There is always an outer_dict because of how the yaml is constructed, this is never needed, so pop this
     _, inner_dict = yaml_dict.popitem()
 
     return inner_dict
+
+def read_yaml_from_filepath(filepath: Path):
+    file_contents=read_file(filepath)
+    yaml_dict=read_yaml_from_string(file_contents)
+
+    if not yaml_dict:
+        raise Exception("problem reading from path")
+
+    return yaml_dict
+
+def read_file(filepath: Path):
+    file_contents=None
+
+    with open(filepath, 'r') as file:
+        file_contents = file.read()
+
+    if file_contents is None:
+        raise Exception("problem reading from path")
+
+    return file_contents
 
 
 def load_module(module_name, path: Path) -> ModuleType:

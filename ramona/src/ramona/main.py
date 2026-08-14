@@ -1,66 +1,101 @@
 # Python libs
 import json
+import logging
 from pathlib import Path
 
-from ramona.generator.generator import generate_templates
-from ramona.model.model_loader import get_model_configs
-from ramona.model.resolver import ResolveContext, resolve
-from ramona.modelcheck.modelchecker import run_modelchecks
-from ramona.singletons import project_config
+from ramona.model.classes.RamonaProject import RamonaProject
+from ramona.model.ramona_project_builder import build_ramona_project
 from ramona.utils import constants
-from ramona.utils.file_handler import get_abs_path_and_validate_if_exists, read_yaml
-from .singletons import application_arguments
+from ramona.utils.file_handler import get_abs_ramona_config_path
+from ramona.utils.classes.ApplicationArguments import ApplicationArguments
+
+
+logger=logging.getLogger(constants.LOGGER_NAME)
 
 
 def main():
-    # Get the location of the generator file and the parent dir
-    project_config_abs_path:Path = get_abs_generator_config_path(application_arguments.get().project_config_path)
+    # Get app arguments
+    application_arguments: ApplicationArguments = get_app_arguments()
 
-    # # Initalize the singleton for generator file config
-    setup_project_singleton(project_config_abs_path)
+    # Inialize app
+    initalize_ramona_app(application_arguments.ramona_config_path)
 
-    # # Get all template config, aka everything that has to be generated
-    list_of_model_configs=get_model_configs()
+    # Build the ramona project
+    logger.info("Building Ramona project...")
+    ramona_project: RamonaProject = build_ramona_project(application_arguments.ramona_config_path)
+
+    # Get all the objects in all the models
+    # list_of_model_configs=get_model_configs()
+    # print(list_of_model_configs)
 
     # for model_config in list_of_model_configs:
     #     # print(template_config)
     #     print(json.dumps (model_config, indent=4, sort_keys=True))
     #     # generate all templates
 
-    if application_arguments.get().command == constants.commands.GENERATE:
-        generate_templates(list_of_model_configs)
-    elif application_arguments.get().command == constants.commands.MODELCHECK:
-        run_modelchecks(list_of_model_configs)
-    else:
-        raise NotImplementedError("that command is not implemented")
+    # if application_arguments.get().command == constants.commands.GENERATE:
+    #     generate_templates(list_of_model_configs)
+    # elif application_arguments.get().command == constants.commands.MODELCHECK:
+    #     run_modelchecks(list_of_model_configs)
+    # else:
+    #     raise NotImplementedError("that command is not implemented")
 
 
-def get_abs_generator_config_path(project_config_path_str: str):
-    try:
-        project_config_path: Path=get_abs_path_and_validate_if_exists(project_config_path_str)
+def get_app_arguments() -> ApplicationArguments:
+    # Get app arguments
+    application_arguments: ApplicationArguments=ApplicationArguments().get_application_arguments()
 
-        if project_config_path.is_file():
-            return project_config_path
+    # Do a quick check if the project file is valid
+    get_abs_ramona_config_path(application_arguments.ramona_config_path)
 
-        raise Exception
-    except Exception as e:
-        raise Exception(f"argument for project_config_path is not valid, {project_config_path_str} does not point to a valid file.")
+    return application_arguments
 
 
-def setup_project_singleton(project_config_abs_path: Path):
-    project_config.set_path(project_config_abs_path)
-    # The working dir is the dir of the config file. Can change it so later an argument can be given to change this
-    # This means all relative paths in projects, should be assuming this as working dir
-    project_config.set_dir(project_config_abs_path.parent)
+def initalize_ramona_app(project_config_location: str | Path) -> None:
+    log_location = get_abs_ramona_config_path(project_config_location)
+    log_location = log_location.parent.joinpath(constants.LOG_LOCATION)
 
-    # Set up config
-    project_config_dict=read_yaml(project_config_abs_path)
+    #logger
+    initalize_logger(log_location)
+    logger.debug("-----Start Ramona Run------")
+    logger.info("initalizing project...")
 
-    # resolve the project_config
-    project_config_dict=resolve(project_config_dict, ResolveContext(project=project_config_dict))
-    project_config.set_config(project_config_dict)
 
-    # print("Project_config: ", json.dumps (project_config_dict, indent=4, sort_keys=True))
+def initalize_logger(log_location: Path):
+    log_location.parent.mkdir(parents=True, exist_ok=True)
+
+    # Remember whether this is a new log file
+    log_file_exists = log_location.exists()
+
+    logger = logging.getLogger(constants.LOGGER_NAME)
+    logger.setLevel(logging.DEBUG)
+
+    if logger.handlers:
+        return
+    
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler(log_location)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+    if log_file_exists:
+        fh.stream.write("\n\n")
+        fh.flush()
+        # TODO REMOVE
+        print(log_location)
+        log_location.write_text("")
 
 
 if __name__ == "__main__":

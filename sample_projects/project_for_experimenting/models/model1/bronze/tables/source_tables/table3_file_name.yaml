@@ -1,5 +1,5 @@
 model_config:
-  models:
+  objects:
     - file_name: file_name_table
       id: table1
       name: table_with_alias

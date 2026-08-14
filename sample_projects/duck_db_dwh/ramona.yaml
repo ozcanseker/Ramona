@@ -1,0 +1,17 @@
+project_config:
+  # Protected keywords
+  models_dir: ./99_models
+  templates_dir: ./100_templates
+  modelchecks_dir: ./modelchecks
+
+  always_clean:
+    - project("sql_output_dir")
+    - project("load_script_folder")
+
+
+  # Non protected keywords
+  project_name: sample_project_1
+
+  duck_db: "./00_duckdb/"
+  sql_output_dir: "./10_sql/"
+  load_script_folder: "./20_load_scripts/"

@@ -1,7 +1,7 @@
 model_config:
-  models:
+  objects:
     - id: table2
-      name: this("id")
+      name: "{{ this('id') | upper }}"
       columns:
         - id: column1
           datatype: VARCHAR(1234)

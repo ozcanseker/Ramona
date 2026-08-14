@@ -1,15 +1,17 @@
-project_config:
+ramona_project:
   # Must variables
+  id: sample_project_1
+  name: "{{ this('id') }}_name"
+
   models_dir: ./models
   templates_dir: ./templates
   modelchecks_dir: ./modelchecks
 
-  always_clean:
-    - project("sql_output_dir")
+  always_clean: {{ this('generated_paths').values() | list }}
 
   # Non protected keywords
-  # Some global variables
-  project_name: sample_project_1
+  generated_paths:
+    sql_output_dir: "./sql/"
+    dag_output_dir: "./dags/generated/"
 
-  # Paths
-  sql_output_dir: "./sql/"
+

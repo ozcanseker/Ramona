@@ -24,7 +24,7 @@ fileloader = FileLoader()
 
 
 class ModelKeys:
-    MODELS = "models"
+    OBJECTS = "objects"
     OUTPUT_DIR = "output_dir"
     GENERATION_CONFIG = "generation_config"
 
@@ -39,7 +39,7 @@ model_keys = ModelKeys()
 
 
 class FileNames:
-    PROJECT_CONFIG = "ramona.yaml"
+    RAMONA_CONFIG = "ramona.yaml"
     MODEL_CONFIG = "model_config.yaml"
 
 filenames = FileNames()
@@ -54,3 +54,5 @@ GENERATION_CONFIG_TEMPLATE_KEY = "template"
 # Application configs, we can also put this in project_config.yaml but i do not want people to
 # adjust these
 MAX_ITERATIONS_RESOLVER = 50
+LOG_LOCATION="./log/ramona.log"
+LOGGER_NAME="ramona"

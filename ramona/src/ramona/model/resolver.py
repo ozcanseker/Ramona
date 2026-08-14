@@ -1,211 +1,173 @@
-import os
+from functools import partial
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
+
+from jinja2.nativetypes import NativeEnvironment
+from jinja2 import Environment
+
+from ramona.model.classes.RamonaProject import Model, RamonaProject
+from ramona.utils.file_handler import read_yaml_from_string
 from ..utils import constants
 
-EXPRESSION_REGEX = re.compile(
-    r'(?P<unpack>\.\.\.)?'
-    r'(?P<type>\w+)'
-    r'\('
-    r'\s*'
-    r'(?:'
-        r'"(?P<name>[^"]+)"'
-    r')?'
-    r'\s*'
-    r'\)'
-)
-
-
-@dataclass(frozen=True)
+@dataclass
 class ResolveContext:
-    # These are all dictionaries used to reference
-    project: dict
-    model: dict | None = None
-    parent_dict: dict | None = None
-    parent_yaml: dict | None = None
-    this: dict | None = None
+    ramona_project: RamonaProject|None=None
+    model: Model|None=None
+    scope: dict[str, Any]|None =None
+    _parents: list[dict[str, Any]]=field(default_factory=list)
+    _this: dict[str, Any]|None=None
 
-    # Extra variables that are needed in 
-    current_key: str | None = None
+    def __post_init__(self):
+        if self.scope:
+            self._parents.append(self.scope)
+
+
+# Ai, geen idee wat het doet
+UNQUOTED_JINJA = re.compile( r"^(?P<prefix>\s*[^:]+:\s*)(?P<jinja>{{.*}})(?P<suffix>\s*)$")
 
 
 # ============================================================
 # Main resolver
 # ============================================================
 
-def resolve(object_to_resolve, context: ResolveContext):
+def resolve_jinja_yaml(string_to_resolve: str, resolve_context: ResolveContext) -> dict[str, Any]:
     """
     Resolve any object recursively.
     """
+    # preprocess
+    resolver = Jinja2YamlResolver(string_to_resolve, resolve_context)
+    return resolver.resolve()
 
-    if isinstance(object_to_resolve, dict):
-        result = {}
+class Jinja2YamlResolver:
+    def __init__(self, string_to_resolve: Any, resolve_context: ResolveContext):
+        # Create class vars
+        self.string_to_resolve=string_to_resolve
+        self.starting_resolve_context=resolve_context
 
-        for key, value in object_to_resolve.items():
-            result[key] = resolve(
-                value,
-                ResolveContext(
-                    project=context.project,
-                    model=context.model,
-                    current_key=key,
-                    this=object_to_resolve
-                )
-            )
+    # ============================================================
+    # Resolvers
+    # ============================================================
+    def resolve(self):
+        # Preprocess string
+        self.prepocessed_string, self.placeholder_mapping=self._preprocess_yaml_with_jinja_string(self.string_to_resolve)
+        self.object_to_resolve=read_yaml_from_string(self.prepocessed_string)
 
-        return result
-
-    if isinstance(object_to_resolve, list):
-        result = []
-
-        for item in object_to_resolve:
-            resolved = resolve(item, context)
-
-            # ...globals("list")
-            if ( isinstance(item, str) and item.startswith("...") and isinstance(resolved, list)):
-                result.extend(resolved)
-            else:
-                result.append(resolved)
-
-        return result
+        # Prepare resolve_context
+        self.starting_resolve_context._this=self.object_to_resolve
+        return self._resolve(self.object_to_resolve, self.starting_resolve_context)
 
 
-    if isinstance(object_to_resolve, str):
-        return resolve_expression(object_to_resolve, context)
+    def _resolve(self, object_to_resolve: Any, resolve_context: ResolveContext):
+        if isinstance(object_to_resolve, dict):
+            result: dict[str, Any] = {}
 
-    return object_to_resolve
+            for key, child in object_to_resolve.items():
+                result[key] = self._resolve(
+                    child, 
+                    ResolveContext(
+                        ramona_project=resolve_context.ramona_project,
+                        model=resolve_context.model,
+                        _parents=list(resolve_context._parents) + [resolve_context._this],
+                        _this=object_to_resolve
+                    )
+                )     
+            return result
 
+        if isinstance(object_to_resolve, list):
+            return [self._resolve(item, 
+                                  ResolveContext(
+                                    ramona_project=resolve_context.ramona_project,
+                                    model=resolve_context.model,
+                                    _parents=list(resolve_context._parents) + [resolve_context._this],
+                                    _this=item
+                                )) for item in object_to_resolve]
 
-# ============================================================
-# Expression resolver
-# ============================================================
+        if object_to_resolve in self.placeholder_mapping:
+            native_jinja2_env=self._load_jinja2_env(NativeEnvironment(), resolve_context)
+            resolved_object = self._resolve_jinja_template(self.placeholder_mapping[object_to_resolve], native_jinja2_env)
 
-def resolve_expression(value: str, context: ResolveContext):
-    value = value.strip()
-    match = EXPRESSION_REGEX.match(value)
+            if isinstance(resolved_object, str):
+                return resolved_object
 
-    # Check if has an unpack 
-    if match and match.group("unpack"):
-       return resolve_match(match, context)
-    
+            return self._resolve(resolved_object, resolve_context)
 
-    # These is a loop here because it is not guarenteed that the solved string also has references
-    # So keep resolving until string does not change anymore
-    previous = None
-    iterations=0
-    while previous != value:
-        previous = value
-        value = EXPRESSION_REGEX.sub(
-            lambda match: replace(match, context),
-            value
+        if isinstance(object_to_resolve, str) :
+            string_jinja2_env=self._load_jinja2_env(Environment(), resolve_context)
+            return self._resolve_jinja_template(object_to_resolve, string_jinja2_env)
+        else:
+            return object_to_resolve
+
+    def _resolve_jinja_template(self, value: str, environment: Environment | NativeEnvironment):
+        rendered_string=""
+        string_to_render=value
+        i=0
+
+        while i < constants.MAX_ITERATIONS_RESOLVER:
+            i+=1
+
+            rendered_string = environment.from_string(string_to_render).render()
+
+            if string_to_render == rendered_string or not isinstance(rendered_string, str):
+                break
+
+            string_to_render = rendered_string
+
+        return rendered_string
+
+    # ============================================================
+    # Helper functions
+    # ============================================================
+    def _load_jinja2_env(self, env : NativeEnvironment | Environment, resolve_context: ResolveContext) -> NativeEnvironment:
+        env = env
+
+        env.globals["project"] = partial(self.resolver_project, resolve_context=resolve_context)
+        env.globals["this"] = partial(self.resolver_this, resolve_context=resolve_context)
+        env.globals["model"] = partial(self.resolver_model, resolve_context=resolve_context)
+        env.globals["scope"] = partial(self.resolver_scope, resolve_context=resolve_context)
+
+        return env
+
+    def _preprocess_yaml_with_jinja_string(self, string_to_resolve):
+        placeholder_mapping={}
+        final_results=[]
+
+        for line in string_to_resolve.splitlines(keepends=True):
+            result:str=line
+            match=UNQUOTED_JINJA.match(line)
+
+            if match:
+                expression=match.group("jinja")
+                placeholder=f"__RAMONA_JINJA_{len(placeholder_mapping)}__"
+
+                placeholder_mapping[placeholder]=expression
+                result= line.replace(expression, placeholder, 1)
+
+            final_results.append(result)
+
+        return (
+            "".join(final_results),
+            placeholder_mapping
         )
-
-        iterations+=1
-        if iterations > constants.MAX_ITERATIONS_RESOLVER:
-            raise Exception(f"Circular dependency detected in {value}")
-
-
-    # Split on the +
-    # Strip all the "
-    # join together
-    return "".join(
-        part.strip().strip('"')
-        for part in value.split("+")
-    )
-
-
-def replace(match, context: ResolveContext):
-    result = resolve_match(match, context)
-
-    if not isinstance(result, str):
-
-        raise TypeError(
-            f'{match.group("type")}("{match.group("name")}") '
-            "cannot be used inside a string expression"
-        )
-
-    return f'"{result}"'
-
-
-def resolve_match(match, context: ResolveContext):
-    resolver = RESOLVERS.get(match.group("type"))
-
-    if resolver is None:
-        raise ValueError(f'Unknown resolver "{match.group("type")}"')
-
-    return resolver(match.group("name"), context)
-
-# ============================================================
-# Individual resolvers
-# ============================================================
-
-def resolve_project(name: str, context: ResolveContext):
-    if name not in context.project:
-        raise KeyError( f'Global "{name}" does not exist')
-
-    value = context.project[name]
-
-    return value
-
-
-def resolve_model(name: str, context: ResolveContext):
-    if name not in context.model:
-        raise KeyError( f'Global "{name}" does not exist')
-
-    value = context.model[name]
-
-    return value
-
-
-def resolve_parent_yaml(name: str, context: ResolveContext):
-    if name not in context.parent_yaml:
-        raise KeyError( f'Parent yaml "{name}" does not exist')
-
-    key = name or context.current_key
-
-    if key not in context.parent_yaml:
-        raise KeyError(f'Parent yaml does not contain "{key}"')
-
-    return context.parent_yaml[key]
-
-
-def resolve_parent(name: str | None,context: ResolveContext ):
-    if context.parent_dict is None:
-        raise ValueError("No parent available")
-
-    key = name or context.current_key
-
-    if key not in context.parent_dict:
-        raise KeyError(f'Parent does not contain "{key}"')
-
-    return context.parent_dict[key]
-
-
-def resolve_env(name: str,context: ResolveContext):
-    if name not in os.environ:
-        raise KeyError(f'Environment variable "{name}" does not exist')
     
-    return os.environ[name]
+    # ============================================================
+    # Expression resolver
+    # ============================================================
+    def resolver_project(self, key: str , resolve_context: ResolveContext) -> Any:
+        return resolve_context.ramona_project.get_from_project_config(key)
 
+    def resolver_model(self, key: str, resolve_context: ResolveContext ) -> Any:
+        return resolve_context.model.get_from_model_config(key)  
 
-def resolve_this(name: str,context: ResolveContext):
-    if context.this is None:
-        raise ValueError("No this available")
+    def resolver_this(self, key: str , resolve_context: ResolveContext) -> Any:
+        return resolve_context._this[key]  
 
-    if name not in context.this:
-        raise KeyError(f'No variables called "{name}"')
+    def resolver_scope(self, key: str , resolve_context: ResolveContext) -> Any:
+        if key in resolve_context._this:
+            return resolve_context._this[key]
 
-    return context.this[name]
+        for parent in reversed(resolve_context._parents):
+            if key in parent:
+                return parent[key]
 
-
-# ============================================================
-# Resolver registry
-# ============================================================
-
-RESOLVERS = {
-    "project": resolve_project,
-    "model": resolve_model,
-    "env": resolve_env,
-    "parent": resolve_parent,
-    "parent_yaml": resolve_parent_yaml,
-    "this": resolve_this
-}
+        raise Exception("Some error message.")
