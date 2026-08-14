@@ -186,7 +186,7 @@ def register_all_objects(ramona_project: RamonaProject):
                 model.register_object(object)
                 logger.debug(f"Registered the following object:\n{object}")
 
-    if constants.model_keys.OBJECTS:
+    if constants.model_keys.OBJECTS in ramona_project.project_config:
         project_objects=ramona_project.get_from_project_config(constants.model_keys.OBJECTS)
         final_config=dict(ramona_project.project_config)
         final_config.pop(constants.model_keys.OBJECTS)
