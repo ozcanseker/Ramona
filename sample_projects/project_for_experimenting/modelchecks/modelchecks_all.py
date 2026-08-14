@@ -1,3 +1,4 @@
+from ramona.model.classes.RamonaProject import Object
 from ramona.modelcheck import modelcheck, CheckResult, ModelCheckConfig
 
 
@@ -10,8 +11,8 @@ config = ModelCheckConfig(
         name="Check type keyword",
         description="Check if model has a type keyword."
 )
-def check_types(model):
-    if "type" in model:
+def check_types(object: Object):
+    if "type" in object:
         return CheckResult.success()
 
     return CheckResult.failure(
@@ -19,19 +20,14 @@ def check_types(model):
     )
 
 
-# Global config for model checks for this file
-config = ModelCheckConfig(
-    severity="error"
-)
-
 @modelcheck(
         name="Check id keyword",
-        description="Check if model has an id keyword."
+        description="Check if object has an id keyword."
 )
-def has_id(model):
-    if "id" in model:
+def has_id(object: Object):
+    if "id" in object:
         return CheckResult.success()
 
     return CheckResult.failure(
-        "All models require an id."
+        "All object require an id."
     )

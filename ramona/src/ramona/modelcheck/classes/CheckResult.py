@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from ramona.model.classes.RamonaProject import Object
+
 
 class CheckStatus(str, Enum):
     PASSED = "passed"
@@ -12,7 +14,7 @@ class CheckStatus(str, Enum):
 class CheckResult:
     status: CheckStatus
     message: str | None = None
-    model: dict | None = None
+    object: Object | None = None
 
     @classmethod
     def success(cls):

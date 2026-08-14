@@ -11,14 +11,13 @@ logger=logging.getLogger(__name__)
 
 
 def generate_templates(ramona_project: RamonaProject):
-    logger.info("Start generation of objects...")
-
     # Create jinja2 env
+    logger.info("Prepare generation of objects...")
     templates_dir=get_abs_path_and_validate_if_exists(
         ramona_project.project_config[constants.project_config_keys.TEMPLATES_DIR],
         ramona_project.project_folder)
     jinja2_env = create_jinja2_env(templates_dir)
-    logger.info(f"Jinja2 env initalized at folder {templates_dir}")
+    logger.debug(f"Jinja2 env initalized at folder {templates_dir}")
 
     logger.info("Cleaning folders to be used...")
     clean_folders_to_be_used(ramona_project)
@@ -35,6 +34,7 @@ def generate_templates(ramona_project: RamonaProject):
 
 def generate_based_on_template(object: Object, generation_config, jinja2_env: Environment):
     # Get the output
+    logger.debug(f"Generating {object.id} with template: {generation_config[constants.generation_keys.TEMPLATE]}")
     template = jinja2_env.get_template(generation_config[constants.generation_keys.TEMPLATE])
     output = template.render(object=object)
 
@@ -58,7 +58,6 @@ def generate_based_on_template(object: Object, generation_config, jinja2_env: En
 
     # Full path for to be written file:
     file_path=Path(f"{output_dir.joinpath(file_name)}{file_extension}")
-
     write_file(file_path , output)
     
 

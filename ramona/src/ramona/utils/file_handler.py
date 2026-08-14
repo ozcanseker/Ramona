@@ -64,6 +64,7 @@ def write_file(location: Path|str, content):
 
     with open(location, "w") as f:
         f.write(content)
+        logger.debug(f"file written to: {location}")
 
 
 def normalize_args( *args: Path | str | list[Path|str]) -> list[Path]:

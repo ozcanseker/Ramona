@@ -121,6 +121,9 @@ class Model:
     def get_from_model_config(self, key):
         return self.model_config[key]
 
+    def get_config(self):
+        return self.model_config
+
     def get_all_objects_as_list(self):
         return [object for object in self.objects.values()]
 
@@ -141,6 +144,15 @@ class Object:
     def __init__(self, object_config_file_path, object_config):
         self.object_config_file_path = object_config_file_path
         self.object_config=object_config
+
+    def get_config(self):
+        return self.object_config
+
+    def __getitem__(self, key):
+        return self.object_config[key]
+
+    def __contains__(self, key):
+        return key in self.object_config
 
     @property
     def id(self):

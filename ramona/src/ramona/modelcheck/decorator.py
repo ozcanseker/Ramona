@@ -5,7 +5,7 @@ def modelcheck(
     name: str,
     description: str | None = None,
     severity: str | None = None,
-    conditions: list[Condition] | None = None,
+    conditions: list[Condition] | None = [],
 ):
     def decorator(function):
 

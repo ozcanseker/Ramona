@@ -8,6 +8,7 @@ from time import sleep
 from ramona.generator.generator import generate_templates
 from ramona.model.classes.RamonaProject import RamonaProject
 from ramona.model.ramona_project_builder import build_ramona_project
+from ramona.modelcheck.modelchecker import run_modelchecks
 from ramona.utils import constants
 from ramona.utils.file_handler import get_abs_ramona_config_path
 from ramona.utils.classes.ApplicationArguments import ApplicationArguments
@@ -33,8 +34,8 @@ def run():
     if application_arguments.command == constants.commands.GENERATE:
         logger.info("Start generation...")
         generate_templates(ramona_project)
-    # elif application_arguments.get().command == constants.commands.MODELCHECK:
-    #     run_modelchecks(list_of_model_configs)
+    elif application_arguments.command == constants.commands.MODELCHECK:
+        run_modelchecks(ramona_project)
     else:
         raise NotImplementedError("that command is not implemented")
 

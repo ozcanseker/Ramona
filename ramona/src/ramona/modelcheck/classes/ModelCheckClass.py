@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from ramona.model.classes.RamonaProject import Object
 from ramona.modelcheck.classes.CheckResult import CheckResult
 from ramona.modelcheck.classes.types import Condition
 
@@ -16,22 +17,22 @@ class ModelCheck:
     results: list[CheckResult] = field(default_factory=list)
     filepath: Path | None = None
 
-    def should_run(self, model: dict) -> bool:
+    def should_run(self, object: Object) -> bool:
         return all(
-            condition(model) for condition in self.conditions
+            condition(object) for condition in self.conditions
         )
 
-    def run(self, model: dict) -> CheckResult:
+    def run(self, object: Object) -> CheckResult:
         check_results=None
 
-        if self.should_run(model):
-            check_results=self.function(model)
+        if self.should_run(object):
+            check_results=self.function(object)
         else:
             check_results=CheckResult.skipped()
 
         if not isinstance(check_results, CheckResult):
             raise Exception("Return of the modelcheck should be CheckResult.")
 
-        check_results.model=model
+        check_results.object=object
         
         return check_results

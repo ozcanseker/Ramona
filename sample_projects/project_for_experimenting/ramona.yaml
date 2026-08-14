@@ -16,6 +16,8 @@ ramona_project:
 
 
   objects:
-    - generation_config: 
-        - template: "./table_definitions.sql.jinja2"
+    - id: "table_definitions"
+      type: "global_object"
       output_dir: "{{ scope('generated_paths').sql_output_dir }}/definitions/"
+      generation_config: 
+        - template: "./table_definitions.sql.jinja2"
