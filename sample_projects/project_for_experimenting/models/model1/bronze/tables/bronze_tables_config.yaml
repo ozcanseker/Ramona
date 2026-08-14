@@ -6,5 +6,11 @@ model_config:
 
   # Generation config 
   output_dir: '{{ project("generated_paths").sql_output_dir + model("id") + "/bronze" }}' 
+  
+  
   generation_config:
     - template: "./bronze_table.sql.jinja2"
+      
+  objects:
+    - id: "test"
+      test: test1234

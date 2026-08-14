@@ -1,65 +1,55 @@
+import logging
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
-from ramona.singletons import project_config
+from ramona.model.classes.RamonaProject import Object, RamonaProject
 from ramona.utils import constants
 from ramona.utils.file_handler import clean_folders, get_abs_path, get_abs_path_and_validate_if_exists, write_file
 
 
-def generate_templates(list_of_model_configs):
+logger=logging.getLogger(__name__)
+
+
+def generate_templates(ramona_project: RamonaProject):
+    logger.info("Start generation of objects...")
+
+    # Create jinja2 env
     templates_dir=get_abs_path_and_validate_if_exists(
-        project_config.get().project_config[constants.project_config_keys.TEMPLATES_DIR],
-        project_config.get().project_abs_dir)
-
+        ramona_project.project_config[constants.project_config_keys.TEMPLATES_DIR],
+        ramona_project.project_folder)
     jinja2_env = create_jinja2_env(templates_dir)
+    logger.info(f"Jinja2 env initalized at folder {templates_dir}")
 
-    clean_folders_to_be_used(list_of_model_configs)
+    logger.info("Cleaning folders to be used...")
+    clean_folders_to_be_used(ramona_project)
 
-    for model in list_of_model_configs:
-        for generation_config in model[constants.model_keys.GENERATION_CONFIG]:
-            if constants.GENERATION_CONFIG_TEMPLATE_KEY:
-                generate_based_on_template(model, generation_config, jinja2_env)
+    logger.info("Start generation...")
+    for object in ramona_project.get_all_objects_as_list():
+        if not constants.object_keys.GENERATION_CONFIG in  object.object_config:
+            continue
 
-
-def clean_folders_to_be_used(list_of_model_configs):
-    folders_to_be_cleaned=set()
-
-    for model in list_of_model_configs:
-            if not constants.model_keys.OUTPUT_DIR in model:
-                continue
-    
-            output_dir=Path(model[constants.model_keys.OUTPUT_DIR])
-    
-            if not output_dir.exists() or not output_dir.is_dir():
-                continue
-    
-            folders_to_be_cleaned.add(output_dir)
-
-    if constants.project_config_keys.ALWAYS_CLEAN in project_config.get().project_config:
-        for always_to_be_cleaned_path in project_config.get_key(constants.project_config_keys.ALWAYS_CLEAN):
-            abs_path=get_abs_path(always_to_be_cleaned_path, project_config.get().project_abs_dir)
-            folders_to_be_cleaned.add(abs_path)
-
-    clean_folders(folders_to_be_cleaned)
+        for generation_config in object.object_config[constants.object_keys.GENERATION_CONFIG]:
+            if constants.generation_keys.TEMPLATE:
+                generate_based_on_template(object, generation_config, jinja2_env)
 
 
-def generate_based_on_template(model, generation_config, jinja2_env: Environment):
+def generate_based_on_template(object: Object, generation_config, jinja2_env: Environment):
     # Get the output
-    template = jinja2_env.get_template(generation_config[constants.GENERATION_CONFIG_TEMPLATE_KEY])
-    output = template.render(model=model)
+    template = jinja2_env.get_template(generation_config[constants.generation_keys.TEMPLATE])
+    output = template.render(object=object)
 
     # The output dir 
-    output_dir=Path(model[constants.model_keys.OUTPUT_DIR])
+    output_dir=Path(object.object_config[constants.object_keys.OUTPUT_DIR])
 
     # Name of the to be written file
     file_name=""
 
-    if constants.model_keys.FILENAME in model:
-        file_name=model[constants.model_keys.FILENAME]
-    elif constants.model_keys.NAME in model:
-        file_name=model[constants.model_keys.NAME]
-    elif constants.model_keys.ID in model:
-        file_name=model[constants.model_keys.ID]
+    if constants.object_keys.FILENAME in object.object_config:
+        file_name=object.object_config[constants.object_keys.FILENAME]
+    elif constants.object_keys.NAME in object.object_config:
+        file_name=object.object_config[constants.object_keys.NAME]
+    elif constants.object_keys.ID in object.object_config:
+        file_name=object.object_config[constants.object_keys.ID]
     else:
         raise Exception("There is no name or id in the model_config")
 
@@ -80,3 +70,16 @@ def create_jinja2_env(tempalte_location: Path) -> Environment:
     )
 
     return env
+
+def clean_folders_to_be_used(ramona_project: RamonaProject):
+    folders_to_be_cleaned=set()
+
+    for object in ramona_project.get_all_objects_as_list(): 
+        if constants.object_keys.OUTPUT_DIR in object.object_config: 
+            folders_to_be_cleaned.add(object.object_config[constants.object_keys.OUTPUT_DIR])
+
+    if constants.project_config_keys.ALWAYS_CLEAN in ramona_project.project_config:
+        for always_to_be_cleaned_path in ramona_project.get_from_project_config(constants.project_config_keys.ALWAYS_CLEAN):
+            folders_to_be_cleaned.add(always_to_be_cleaned_path)
+
+    clean_folders(folders_to_be_cleaned)

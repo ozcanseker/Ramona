@@ -2,18 +2,22 @@
 import json
 import logging
 from pathlib import Path
+import sys
+from time import sleep
 
+from ramona.generator.generator import generate_templates
 from ramona.model.classes.RamonaProject import RamonaProject
 from ramona.model.ramona_project_builder import build_ramona_project
 from ramona.utils import constants
 from ramona.utils.file_handler import get_abs_ramona_config_path
 from ramona.utils.classes.ApplicationArguments import ApplicationArguments
+from rich.logging import RichHandler
 
 
-logger=logging.getLogger(constants.LOGGER_NAME)
+logger=logging.getLogger(__name__)
 
 
-def main():
+def run():
     # Get app arguments
     application_arguments: ApplicationArguments = get_app_arguments()
 
@@ -23,22 +27,18 @@ def main():
     # Build the ramona project
     logger.info("Building Ramona project...")
     ramona_project: RamonaProject = build_ramona_project(application_arguments.ramona_config_path)
+    logger.info("Finished building ramona project")
 
-    # Get all the objects in all the models
-    # list_of_model_configs=get_model_configs()
-    # print(list_of_model_configs)
 
-    # for model_config in list_of_model_configs:
-    #     # print(template_config)
-    #     print(json.dumps (model_config, indent=4, sort_keys=True))
-    #     # generate all templates
-
-    # if application_arguments.get().command == constants.commands.GENERATE:
-    #     generate_templates(list_of_model_configs)
+    if application_arguments.command == constants.commands.GENERATE:
+        logger.info("Start generation...")
+        generate_templates(ramona_project)
     # elif application_arguments.get().command == constants.commands.MODELCHECK:
     #     run_modelchecks(list_of_model_configs)
-    # else:
-    #     raise NotImplementedError("that command is not implemented")
+    else:
+        raise NotImplementedError("that command is not implemented")
+
+    logger.info("[italic]Fin.[/italic]")
 
 
 def get_app_arguments() -> ApplicationArguments:
@@ -82,9 +82,8 @@ def initalize_logger(log_location: Path):
     fh.setFormatter(formatter)
 
     # create console handler with a higher log level
-    ch = logging.StreamHandler()
+    ch = RichHandler(omit_repeated_times=False, markup=True)
     ch.setLevel(logging.INFO)
-    ch.setFormatter(formatter)
 
     # add the handlers to the logger
     logger.addHandler(fh)
@@ -94,9 +93,12 @@ def initalize_logger(log_location: Path):
         fh.stream.write("\n\n")
         fh.flush()
         # TODO REMOVE
-        print(log_location)
         log_location.write_text("")
 
 
-if __name__ == "__main__":
-    main()
+def main():
+    try:
+        run()
+    except Exception as e:
+        logger.exception("Ramona terminated unexpectedly")
+        sys.exit(1)

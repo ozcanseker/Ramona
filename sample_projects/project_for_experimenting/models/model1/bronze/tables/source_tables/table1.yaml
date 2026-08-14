@@ -12,3 +12,5 @@ model_config:
         - id: column2
           name: column2_alias
           datatype: VARCHAR(1234)
+      mappings:
+        source1: {{ ref("model1", "table2") }}

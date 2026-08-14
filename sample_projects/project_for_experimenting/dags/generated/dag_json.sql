@@ -1,3 +1,0 @@
-CREATE OR REPLACE TABLE dag_json (
-
-)

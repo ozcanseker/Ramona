@@ -3,9 +3,9 @@ ramona_project:
   id: sample_project_1
   name: "{{ this('id') }}_name"
 
-  models_dir: ./models
-  templates_dir: ./templates
-  modelchecks_dir: ./modelchecks
+  models_dir: ./models/
+  templates_dir: ./templates/
+  modelchecks_dir: ./modelchecks/
 
   always_clean: {{ this('generated_paths').values() | list }}
 
@@ -15,3 +15,7 @@ ramona_project:
     dag_output_dir: "./dags/generated/"
 
 
+  objects:
+    - generation_config: 
+        - template: "./table_definitions.sql.jinja2"
+      output_dir: "{{ scope('generated_paths').sql_output_dir }}/definitions/"

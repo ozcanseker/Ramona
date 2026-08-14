@@ -3,20 +3,118 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from ramona.model.classes.RamonaProject import Model, RamonaProject
+from ramona.model.classes.RamonaProject import Model, Object, RamonaProject
+from ramona.model.reference_resolver import resolve_references
 from ramona.model.resolver import ResolveContext, resolve_jinja_yaml
 from ramona.utils import constants
-from ramona.utils.file_handler import get_abs_path_and_validate_if_exists, get_abs_ramona_config_path, get_all_yaml_files_in_dir_and_sub_dirs, read_file, read_yaml_from_filepath
+from ramona.utils.file_handler import get_abs_path, get_abs_path_and_validate_if_exists, get_abs_ramona_config_path, get_all_yaml_files_in_dir_and_sub_dirs, read_file, read_yaml_from_filepath
 
-logger=logging.getLogger(constants.LOGGER_NAME)
+logger=logging.getLogger(__name__)
 
 def build_ramona_project(ramona_project_config_path : str | Path):
     ramona_project: RamonaProject = load_ramona_project_config(ramona_project_config_path)
 
+    # Process models
+    logger.info("Registering models...")
     register_all_models(ramona_project)
-    register_all_objects(ramona_project)
-    # validate_objects(ramona_project)
 
+    # Process objects
+    logger.info("Registering objects...")
+    register_all_objects(ramona_project)
+    logger.info("Resolve references of objects...")
+    resolve_references(ramona_project)
+    register_child_objects_of_objects(ramona_project)
+    logger.debug("Finished processing all objects:")
+    logger.debug(ramona_project.get_all_objects_as_list())
+
+    # Validate models
+    logger.info("Validating objects...")
+    validate_and_correct_project(ramona_project)
+
+    return ramona_project
+
+
+def validate_and_correct_project(ramona_project: RamonaProject):
+    _validate_and_correct_project(ramona_project)
+
+    for object in ramona_project.get_all_objects_as_list():
+        # Pre correct models checks
+        check_if_object_has_required_keys(object, ramona_project)
+
+        # Correct models
+        correct_file_paths_to_abs(object, ramona_project)
+
+        # after correct models checks
+        check_if_output_folder_is_outside_project_folder(object, ramona_project)
+
+
+def _validate_and_correct_project(ramona_project: RamonaProject):
+    if constants.project_config_keys.ALWAYS_CLEAN in ramona_project.project_config:
+        if not isinstance(ramona_project.project_config[constants.project_config_keys.ALWAYS_CLEAN], list):
+            raise Exception("always clean is not a list")
+
+        abs_always_clean_paths=[]
+
+        for path in ramona_project.project_config[constants.project_config_keys.ALWAYS_CLEAN]:
+            abs_path=get_abs_path(path, ramona_project.project_folder)
+
+            if ramona_project.project_folder not in abs_path.parents:
+                raise Exception("Always clean outside of project folder")
+
+            abs_always_clean_paths.append(abs_path)
+
+        ramona_project.project_config[constants.project_config_keys.ALWAYS_CLEAN]=abs_always_clean_paths
+
+def check_if_object_has_required_keys(object: Object, ramona_project: RamonaProject):
+    if constants.object_keys.ID not in object.object_config:
+        raise Exception("object has no id")
+
+
+def correct_file_paths_to_abs(object: Object, ramona_project: RamonaProject):
+    if constants.object_keys.OUTPUT_DIR in object.object_config:
+        object.object_config[constants.object_keys.OUTPUT_DIR]=get_abs_path(
+            object.object_config[constants.object_keys.OUTPUT_DIR],
+            ramona_project.project_folder
+        )
+
+
+def check_if_output_folder_is_outside_project_folder(object: Object, ramona_project: RamonaProject):
+    if constants.object_keys.OUTPUT_DIR in object.object_config:
+        return
+
+    if ramona_project.project_folder not in Path(object.object_config[constants.object_keys.OUTPUT_DIR]).parents:
+        raise Exception("output dir outside of project folder")
+
+
+def register_child_objects_of_objects(ramona_project: RamonaProject):
+    # first project_objest
+    all_model_objects=ramona_project.get_all_model_objects_as_list()
+
+    for object in ramona_project.objects.values():
+        object.object_config[constants.object_keys.CHILD_OBJECTS]=all_model_objects
+
+    # assign the child object to object in models correctly
+    for model in ramona_project.get_models_as_list():
+        for object in model.get_all_objects_as_list():
+            child_yaml_files=get_child_yaml_files(object.object_config_file_path, list(model.all_yaml_config_paths_in_model))
+            objects_from_child_yaml_files=get_object_from_child_yaml_files(child_yaml_files, model)
+            object.object_config[constants.object_keys.CHILD_OBJECTS]=objects_from_child_yaml_files
+
+
+def get_object_from_child_yaml_files(child_yaml_files: list[Path], model: Model):
+    all_objects=[]
+
+    for yaml_file in child_yaml_files:
+        all_objects = all_objects + model.get_objects_for_path(yaml_file)
+
+    return all_objects
+
+
+def get_child_yaml_files(yaml_file: Path, list_of_yaml_files: list[Path]):
+    return_list = list(list_of_yaml_files)
+    return_list = [ childpath for childpath in return_list if yaml_file.parent in childpath.parents ]
+    return_list = [ childpath for childpath in return_list if yaml_file.parent != childpath.parent ]
+    return return_list
 
 def load_ramona_project_config(ramona_project_config_path: str | Path):
     ramona_project_abs_path: Path=get_abs_ramona_config_path(ramona_project_config_path)
@@ -80,13 +178,26 @@ def register_all_objects(ramona_project: RamonaProject):
         for yaml_file_path in model.all_yaml_config_paths_in_model:            
             resolved_objects: dict[str, Any]=create_squashed_template_configs(yaml_file_path, model, ramona_project)
 
-            logger.debug(f"Retrieved the following objects from yaml file:\n"
-                         f"{yaml_file_path}\n"
-                         f"{json.dumps(resolved_objects, indent=4, sort_keys=True)}")
-
             if not resolved_objects:
                 continue
 
+            for resolved_object in resolved_objects:
+                object = Object(yaml_file_path, resolved_object)
+                model.register_object(object)
+                logger.debug(f"Registered the following object:\n{object}")
+
+    if constants.model_keys.OBJECTS:
+        project_objects=ramona_project.get_from_project_config(constants.model_keys.OBJECTS)
+        final_config=dict(ramona_project.project_config)
+        final_config.pop(constants.model_keys.OBJECTS)
+
+        for object in project_objects:
+            object_config = final_config | object
+            object = Object(ramona_project.project_config_file_path, object_config)
+            ramona_project.register_object(object)
+            logger.debug(f"Registered the following object:\n{object}")
+
+        
 
 def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_project: RamonaProject):
     yaml_file_contents=read_file(yaml_file_path)
@@ -128,9 +239,8 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
     )
 
     # also add the parents keys of the yaml files to the final_config
-    resolved_yaml_file_without_objects = dict(resolved_yaml_file_with_objects)
-    resolved_yaml_file_without_objects.pop(constants.model_keys.OBJECTS)
-    final_config = final_config | resolved_yaml_file_without_objects
+    final_config = final_config | dict(resolved_yaml_file_with_objects)
+    final_config.pop(constants.model_keys.OBJECTS)
 
     # Generate all object configs
     all_object_configs=[]

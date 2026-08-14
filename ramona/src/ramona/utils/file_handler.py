@@ -1,9 +1,13 @@
 import importlib
+import logging
 from pathlib import Path
 import shutil
 from types import ModuleType
 
 import yaml
+
+
+logger=logging.getLogger(__name__)
 
 
 def get_abs_ramona_config_path(project_config_path_str: str):
@@ -16,18 +20,6 @@ def get_abs_ramona_config_path(project_config_path_str: str):
         raise Exception
     except Exception as e:
         raise Exception(f"argument for ramona config path is not valid, {project_config_path_str} does not point to a valid file.")
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def get_abs_path_and_validate_is_file(filepath: str|Path, abs_base_dir:Path=None) -> Path:
@@ -93,6 +85,7 @@ def clean_folders( *paths: Path | str | list[Path|str] | set[Path|str]):
 
     for folder in normalize_paths:
         if folder.exists() and folder.is_dir():
+            logger.debug(f"cleaning folder: {folder}")
             shutil.rmtree(folder)
 
 

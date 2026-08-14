@@ -5,16 +5,11 @@ class Commands:
 commands = Commands()
 
 
-# SPECIAL_KEY_WORDS
-# These keywords that are available in the yaml are also used in the application
-# So be carefull using these
-class ProjectConfigKeys:
-    MODELS_DIR = "models_dir"
-    TEMPLATES_DIR = "templates_dir"
-    ALWAYS_CLEAN = "always_clean"
-    MODELCHECKS = "modelchecks_dir"
+class FileNames:
+    RAMONA_CONFIG = "ramona.yaml"
+    MODEL_CONFIG = "model_config.yaml"
 
-project_config_keys = ProjectConfigKeys()
+filenames = FileNames()
 
 
 class FileLoader:
@@ -23,32 +18,45 @@ class FileLoader:
 fileloader = FileLoader()
 
 
-class ModelKeys:
-    OBJECTS = "objects"
-    OUTPUT_DIR = "output_dir"
-    GENERATION_CONFIG = "generation_config"
+# SPECIAL_KEY_WORDS
+# These keywords that are available in the yaml are also used in the application
+# So be carefull using these
 
+class GenericKeys:
     ID = "id"
     NAME = "name"
-    FILENAME = "file_name"
 
-    
-    ABS_FILE_PATH = "absolute_file_path"
+generic_keys = GenericKeys()
+
+
+class ProjectConfigKeys(GenericKeys):
+    MODELS_DIR = "models_dir"
+    TEMPLATES_DIR = "templates_dir"
+    ALWAYS_CLEAN = "always_clean"
+    MODELCHECKS = "modelchecks_dir"
+
+project_config_keys = ProjectConfigKeys()
+
+class ModelKeys(GenericKeys):
+    OBJECTS = "objects"
 
 model_keys = ModelKeys()
 
 
-class FileNames:
-    RAMONA_CONFIG = "ramona.yaml"
-    MODEL_CONFIG = "model_config.yaml"
+class ObjectKeys(GenericKeys):
+    CHILD_OBJECTS = "child_objects"
+    GENERATION_CONFIG = "generation_config"
+    OUTPUT_DIR = "output_dir"
+    FILENAME = "file_name"
 
-filenames = FileNames()
+object_keys = ObjectKeys()
 
 
+class GenerationKeys(GenericKeys):
+    TEMPLATE = "template"
+    COPY_TO_LOCATION = "copy_to_location"
 
-
-
-GENERATION_CONFIG_TEMPLATE_KEY = "template"
+generation_keys = GenerationKeys()
 
 
 # Application configs, we can also put this in project_config.yaml but i do not want people to

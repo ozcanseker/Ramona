@@ -1,3 +1,3 @@
-CREATE OR REPLACE TABLE table_with_alias (
+CREATE OR REPLACE TABLE table3 (
 
 )

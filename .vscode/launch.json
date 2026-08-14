@@ -1,16 +1,18 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File with Arguments",
+            "name": "Ramona generate",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/venv/Scripts/ramona.exe",
+            "args": [
+                "-rcp",
+                ".\\sample_projects\\project_for_experimenting\\ramona.yaml",
+                "generate"
+            ],
             "console": "integratedTerminal",
-            "args": "-wcp \".\\sample_projects\\sample_project_1\\project_config.yaml\""
+            "justMyCode": true
         }
     ]
 }

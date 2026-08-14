@@ -1,7 +1,7 @@
 model_config:
   objects:
     - file_name: file_name_table
-      id: table1
+      id: table3
       name: table_with_alias
       columns:
         - id: column1

@@ -1,4 +1,5 @@
 from functools import partial
+import json
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -7,6 +8,7 @@ from jinja2.nativetypes import NativeEnvironment
 from jinja2 import Environment
 
 from ramona.model.classes.RamonaProject import Model, RamonaProject
+from ramona.model.reference_resolver import TempRefClass
 from ramona.utils.file_handler import read_yaml_from_string
 from ..utils import constants
 
@@ -19,8 +21,16 @@ class ResolveContext:
     _this: dict[str, Any]|None=None
 
     def __post_init__(self):
+        if self.ramona_project:
+            self._parents.append(self.ramona_project.project_config)
+
+        if self.model:
+            self._parents.append(self.model.model_config)
+
         if self.scope:
             self._parents.append(self.scope)
+
+
 
 
 # Ai, geen idee wat het doet
@@ -125,6 +135,7 @@ class Jinja2YamlResolver:
         env.globals["this"] = partial(self.resolver_this, resolve_context=resolve_context)
         env.globals["model"] = partial(self.resolver_model, resolve_context=resolve_context)
         env.globals["scope"] = partial(self.resolver_scope, resolve_context=resolve_context)
+        env.globals["ref"] = partial(self.resolver_ref, resolve_context=resolve_context)
 
         return env
 
@@ -171,3 +182,24 @@ class Jinja2YamlResolver:
                 return parent[key]
 
         raise Exception("Some error message.")
+
+    def resolver_ref(self, *args: str, resolve_context: ResolveContext) -> Any:
+        model=None
+        object=None
+
+        if len(args) == 1:
+            model=resolve_context.model
+            object=args[0]
+            
+        if len(args) == 2:
+            model=resolve_context.ramona_project.get_model_from_key(args[0])
+            object=args[1]
+
+        if len(args) > 2:
+            raise Exception("The ref argument is used with 1 or 2 arguments.")
+
+        return TempRefClass(
+            resolve_context.ramona_project.id if "id" in resolve_context.ramona_project.id else "",
+            model.id,
+            object
+         )

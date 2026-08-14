@@ -1,0 +1,3 @@
+CREATE OR REPLACE TABLE test (
+
+)
