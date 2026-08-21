@@ -1,0 +1,14 @@
+model_config:
+  id: "Throwaway model"
+
+  objects:
+    - id: "copy file test"
+      template_config: 
+      - copy_from: ./copy_from_folder/create_main_db.sql
+        output_dir: ./sql/copy_over_dir/
+    
+    - id: copy folder test
+      template_config: 
+        - copy_from: ./copy_whole_folder  
+          output_dir: ./sql/copy_over_dir/
+        

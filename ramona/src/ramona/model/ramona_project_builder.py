@@ -1,6 +1,7 @@
 import json
 import logging
 from pathlib import Path
+import re
 from typing import Any
 
 from ramona.model.classes.RamonaProject import Model, Object, RamonaProject
@@ -21,6 +22,7 @@ def build_ramona_project(ramona_project_config_path : str | Path):
     # Process objects
     logger.info("Registering objects...")
     register_all_objects(ramona_project)
+
     logger.info("Resolve references of objects...")
     resolve_references(ramona_project)
     register_child_objects_of_objects(ramona_project)
@@ -36,54 +38,77 @@ def build_ramona_project(ramona_project_config_path : str | Path):
 
 def validate_and_correct_project(ramona_project: RamonaProject):
     _validate_and_correct_project(ramona_project)
-
+    
     for object in ramona_project.get_all_objects_as_list():
         # Pre correct models checks
         check_if_object_has_required_keys(object, ramona_project)
 
         # Correct models
-        correct_file_paths_to_abs(object, ramona_project)
+        correct_file_paths_to_abs(object, ramona_project, constants.object_keys.OUTPUT_DIR)
 
         # after correct models checks
-        check_if_output_folder_is_outside_project_folder(object, ramona_project)
+        check_if_output_folder_is_valid(object, ramona_project)
+
+        if constants.object_keys.TEMPLATE_CONFIG in object:
+            for template_config in object[constants.object_keys.TEMPLATE_CONFIG]:
+                validate_and_correct_template_config(template_config, object, ramona_project)
+
+
+def validate_and_correct_template_config(template_config: dict, object: Object, ramona_project: RamonaProject):
+    correct_file_paths_to_abs(template_config, ramona_project, constants.generic_keys.OUTPUT_DIR)
+    correct_file_paths_to_abs(template_config, ramona_project, constants.template_keys.COPY_FROM)
+
+    check_if_output_folder_is_valid(template_config, ramona_project)
+
+    if constants.generic_keys.OUTPUT_DIR not in template_config and constants.generic_keys.OUTPUT_DIR not in object:
+        raise Exception("Need to at lease have one output_dir key in the object or template_config")
+
 
 
 def _validate_and_correct_project(ramona_project: RamonaProject):
-    if constants.project_config_keys.ALWAYS_CLEAN in ramona_project.project_config:
-        if not isinstance(ramona_project.project_config[constants.project_config_keys.ALWAYS_CLEAN], list):
-            raise Exception("always clean is not a list")
+    # Fix generated paths, and validate
+    if not constants.project_config_keys.GENERATED_PATHS in ramona_project.project_config:
+        raise Exception("There is no generated paths in the project config")
 
-        abs_always_clean_paths=[]
+    if not isinstance(ramona_project.project_config[constants.project_config_keys.GENERATED_PATHS], list):
+        raise Exception("generated paths is not a list")
 
-        for path in ramona_project.project_config[constants.project_config_keys.ALWAYS_CLEAN]:
-            abs_path=get_abs_path(path, ramona_project.project_folder)
+    abs_generated_paths=[]
+    for path in ramona_project.project_config[constants.project_config_keys.GENERATED_PATHS]:
+        abs_path=get_abs_path(path, ramona_project.project_folder)
 
-            if ramona_project.project_folder not in abs_path.parents:
-                raise Exception("Always clean outside of project folder")
+        if ramona_project.project_folder not in abs_path.parents:
+            raise Exception("Generated pathss outside of project folder")
 
-            abs_always_clean_paths.append(abs_path)
+        abs_generated_paths.append(abs_path)
 
-        ramona_project.project_config[constants.project_config_keys.ALWAYS_CLEAN]=abs_always_clean_paths
+    ramona_project.project_config[constants.project_config_keys.GENERATED_PATHS]=abs_generated_paths
 
 def check_if_object_has_required_keys(object: Object, ramona_project: RamonaProject):
     if constants.object_keys.ID not in object.object_config:
         raise Exception("object has no id")
 
 
-def correct_file_paths_to_abs(object: Object, ramona_project: RamonaProject):
-    if constants.object_keys.OUTPUT_DIR in object.object_config:
-        object.object_config[constants.object_keys.OUTPUT_DIR]=get_abs_path(
-            object.object_config[constants.object_keys.OUTPUT_DIR],
+def correct_file_paths_to_abs(to_correct: Object | dict, ramona_project: RamonaProject, key: str):
+    if key in to_correct:
+        to_correct[key]=get_abs_path(
+            to_correct[key],
             ramona_project.project_folder
         )
 
 
-def check_if_output_folder_is_outside_project_folder(object: Object, ramona_project: RamonaProject):
-    if constants.object_keys.OUTPUT_DIR in object.object_config:
+def check_if_output_folder_is_valid(to_check: Object | dict, ramona_project: RamonaProject):
+    if constants.generic_keys.OUTPUT_DIR not in to_check:
         return
 
-    if ramona_project.project_folder not in Path(object.object_config[constants.object_keys.OUTPUT_DIR]).parents:
-        raise Exception("output dir outside of project folder")
+    is_in_generated_path=False
+
+    for generated_path in ramona_project.project_config[constants.project_config_keys.GENERATED_PATHS]:
+        if generated_path in Path(to_check[constants.generic_keys.OUTPUT_DIR]).parents:
+            is_in_generated_path=True
+
+    if not is_in_generated_path:
+        raise Exception(f"output dir {to_check[constants.generic_keys.OUTPUT_DIR]} outside of generated_path")
 
 
 def register_child_objects_of_objects(ramona_project: RamonaProject):
@@ -161,8 +186,9 @@ def get_all_models_config_files(ramona_project: RamonaProject) -> list[Path]:
     
     all_model_dirs:list[Path]=[]
 
-    for f in models_dir.rglob(constants.filenames.MODEL_CONFIG):
-        all_model_dirs.append(f)
+    for model_config_file_name in constants.filenames.MODEL_CONFIG_NAMES:
+        for f in models_dir.rglob(model_config_file_name):
+            all_model_dirs.append(f)
 
     # Also validate that there are not model_config.yaml inside another model_config.yaml
     for f in all_model_dirs:
@@ -200,13 +226,13 @@ def register_all_objects(ramona_project: RamonaProject):
         
 
 def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_project: RamonaProject):
-    yaml_file_contents=read_file(yaml_file_path)
-
     if not yaml_file_path:
         return []
 
+    yaml_file_contents=read_file(yaml_file_path)
+
     # Check if file has objects, otherwise no need because output of file is objects
-    if constants.model_keys.OBJECTS not in yaml_file_contents:
+    if not re.search(rf"^[\t ]*{constants.model_keys.OBJECTS}[\t ]*:", yaml_file_contents, re.MULTILINE):
         return []
 
     parent_yaml_files_sorted = parent_yaml_files_sorted_highest_first(yaml_file_path, model)
@@ -251,7 +277,6 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
 
     return all_object_configs
     
-
 
 def parent_yaml_files_sorted_highest_first(yaml_file_path: Path, model: Model):
     if yaml_file_path == model.model_config_file_path:

@@ -1,2 +1,9 @@
-00_duckdb
+00_landing_zone
+01_duckdb
 log
+__pycache__
+.conda
+venv
+200_secrets
+
+*/**/!.gitkeep

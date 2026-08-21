@@ -1,0 +1,106 @@
+from datetime import date, timedelta
+import hashlib
+import os
+import sys
+import dotenv
+from pathlib import Path
+import ramona.utils.constants as ramona_constants
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from include.extract.http_extractor import get_http_request_with_streaming
+
+def main():
+    # Wat variabelen die geïnitialiseerd worden
+    ramona_project_config_name=ramona_constants.filenames.RAMONA_CONFIG
+
+    # Start pipeline script
+    print("Running RH-dag to download files.")
+    # Find project root
+    project_root: Path = find_file_in_parents(ramona_project_config_name)
+    print(f"Found project root: {project_root}.")
+
+    #load env
+    load_env_variables(project_root)
+    print("Loaded env variables.")
+
+    # Download file
+    file_name = download_json_data_to_location(project_root)
+
+    # upload_json_data_to_table()
+
+def load_env_variables(project_root: Path):
+    loaded = dotenv.load_dotenv(project_root.joinpath("./200_secrets").joinpath(object["secrets_env_file"]))
+    
+    if not loaded:
+        raise Exception("Something went wrong loading env.")
+
+
+def download_json_data_to_location(project_root: Path):
+    #voor nu altijd laatste 7 dagen
+    end_date= date.today().isoformat()
+    start_date= (date.today() - timedelta(days=7)).isoformat()
+
+    file_name=f"KNMI_EV_24_{end_date}_{start_date}.json"
+    output_pad = project_root.joinpath("00_landing_zone").joinpath(file_name)
+
+    url="https://api.dataplatform.knmi.nl/edr/v1/collections/daily-in-situ-meteorological-observations/cube"
+    headers={
+        "Authorization": os.getenv("KNMI_API_KEY_EDR")
+    }
+
+    params={
+        "datetime": f"{start_date}T00:00:00Z/{end_date}T23:59:59Z",
+        "f":"CoverageJSON",
+        "bbox":"3.31,50.75,7.23,53.58",
+        "parameter-name":"EV24"
+    }
+
+    get_http_request_with_streaming(
+        url=url,
+        headers=headers,
+        params=params,
+        output_pad=output_pad
+    )
+
+    return hash_and_rename_file(output_pad)
+
+
+def hash_and_rename_file(file_path: Path) -> Path:
+    hasher = hashlib.sha256()
+
+    with open(file_path, "rb") as file:
+        while chunk := file.read(8192):
+            hasher.update(chunk)
+
+    file_hash = hasher.hexdigest()[:12]
+
+    new_path = file_path.with_name(
+        f"{file_path.stem}_{file_hash}{file_path.suffix}"
+    )
+
+    if new_path.exists():
+        print("exact same data already exists, for this date and time. Removing downloaded file")
+        file_path.unlink()
+    else:
+        file_path.rename(new_path)
+
+    return new_path
+
+
+def find_file_in_parents(filename: str) -> Path:
+    current = Path(__file__).resolve().parent
+
+    for directory in [current, *current.parents]:
+        candidate = Path(directory, filename)
+
+        if candidate.is_file():
+            return candidate.parent
+
+    raise FileNotFoundError(
+        f"{filename!r} not found in {current} or any parent directory"
+    )
+
+
+if __name__ == "__main__":
+    main()

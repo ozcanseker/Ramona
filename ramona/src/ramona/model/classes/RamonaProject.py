@@ -20,6 +20,24 @@ class RamonaProject:
         self.models={}
         self.objects={}
 
+    def __getitem__(self, key):
+        return self.project_config[key]
+
+    def __contains__(self, key):
+        return key in self.project_config
+
+    def __setitem__(self, key, value):
+        self.project_config[key]=value
+
+    def __repr__(self):
+        return "\n".join([
+            "RamonaProject:",
+            f"config_path={self.project_config_file_path}",
+            f"project_folder={self.project_folder}",
+            f"project_config=",
+            json.dumps(self.project_config, indent=4, sort_keys=True, cls=DataclassEncoder),
+        ])
+
     @property
     def id(self):
         return self.project_config['id']
@@ -63,15 +81,6 @@ class RamonaProject:
     def get_all_objects_as_list(self):
             return self.get_all_model_objects_as_list() + list(self.objects.values())
 
-    def __repr__(self):
-        return "\n".join([
-            "RamonaProject:",
-            f"config_path={self.project_config_file_path}",
-            f"project_folder={self.project_folder}",
-            f"project_config=",
-            json.dumps(self.project_config, indent=4, sort_keys=True)
-        ])
-
 
 class Model:
     model_config_file_path: str = None
@@ -85,6 +94,25 @@ class Model:
         self.model_folder=model_config_file_path.parent
 
         self.objects={}
+
+    def __getitem__(self, key):
+        return self.model_config[key]
+
+    def __contains__(self, key):
+        return key in self.model_config
+
+    def __setitem__(self, key, value):
+        self.model_config[key]=value
+
+    def __repr__(self):
+        return "\n".join([
+            "Model:",
+            f"model_config_file_path={self.model_config_file_path}",
+            f"model_folder={self.model_folder}",
+            f"model_config=",
+            json.dumps(self.model_config, indent=4, sort_keys=True)
+        ])
+
 
     @property
     def id(self):
@@ -102,15 +130,6 @@ class Model:
                         )       
 
         self.objects[object.id]=object
-
-    def __repr__(self):
-        return "\n".join([
-            "Model:",
-            f"model_config_file_path={self.model_config_file_path}",
-            f"model_folder={self.model_folder}",
-            f"model_config=",
-            json.dumps(self.model_config, indent=4, sort_keys=True)
-        ])
 
     def get_object_from_key(self, key: str):
         if key not in self.objects:
@@ -145,18 +164,15 @@ class Object:
         self.object_config_file_path = object_config_file_path
         self.object_config=object_config
 
-    def get_config(self):
-        return self.object_config
-
     def __getitem__(self, key):
         return self.object_config[key]
 
     def __contains__(self, key):
         return key in self.object_config
 
-    @property
-    def id(self):
-        return self.object_config['id']
+    def __setitem__(self, key, value):
+        self.object_config[key]=value
+        pass
 
     def __repr__(self):
         return "\n".join([
@@ -166,14 +182,9 @@ class Object:
             json.dumps(self.object_config, indent=4, sort_keys=True, cls=DataclassEncoder)
         ])
 
+    @property
+    def id(self):
+        return self.object_config['id']
 
-
-class DataclassEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if is_dataclass(obj):
-            return asdict(obj)
-
-        if isinstance(obj, Object):
-            return "Object"
-        
-        return super().default(obj)
+    def get_config(self):
+        return self.object_config

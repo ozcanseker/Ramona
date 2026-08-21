@@ -24,22 +24,63 @@ def generate_templates(ramona_project: RamonaProject):
 
     logger.info("Start generation...")
     for object in ramona_project.get_all_objects_as_list():
-        if not constants.object_keys.GENERATION_CONFIG in  object.object_config:
+        if not constants.object_keys.TEMPLATE_CONFIG in  object.object_config:
             continue
 
-        for generation_config in object.object_config[constants.object_keys.GENERATION_CONFIG]:
-            if constants.generation_keys.TEMPLATE:
-                generate_based_on_template(object, generation_config, jinja2_env)
+        for template_config in object.object_config[constants.object_keys.TEMPLATE_CONFIG]:
+
+            if constants.template_keys.TEMPLATE in template_config:
+                generate_based_on_template(object, ramona_project, template_config, jinja2_env)
+
+            if constants.template_keys.COPY_FROM in template_config:
+                copy_over_file(object, template_config)
+                
+
+def copy_over_file(object: Object, template_config):
+    copy_from = Path(template_config[constants.template_keys.COPY_FROM])
+
+    # The output dir
+    if constants.generic_keys.OUTPUT_DIR in object:
+        output_path = Path(object[constants.object_keys.OUTPUT_DIR])
+    elif constants.generic_keys.OUTPUT_DIR in template_config:
+        output_path = Path(template_config[constants.object_keys.OUTPUT_DIR])
+    else:
+        return
+
+    if not copy_from.exists():
+        raise Exception(
+            f"copy from generation failed: {copy_from} does not exist"
+        )
+
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    if copy_from.is_dir():
+        for item in copy_from.iterdir():
+            item.copy_into(
+                output_path,
+                preserve_metadata=True
+            )
+    else:
+        copy_from.copy(
+            output_path / copy_from.name,
+            preserve_metadata=True
+        )
 
 
-def generate_based_on_template(object: Object, generation_config, jinja2_env: Environment):
+def generate_based_on_template(object: Object, ramona_project: RamonaProject, template_config, jinja2_env: Environment):
     # Get the output
-    logger.debug(f"Generating {object.id} with template: {generation_config[constants.generation_keys.TEMPLATE]}")
-    template = jinja2_env.get_template(generation_config[constants.generation_keys.TEMPLATE])
-    output = template.render(object=object)
+    logger.debug(f"Generating {object.id} with template: {template_config[constants.template_keys.TEMPLATE]}")
+    template = jinja2_env.get_template(template_config[constants.template_keys.TEMPLATE])
+    output = template.render(object=object, project=ramona_project)
+    output_dir=None
 
     # The output dir 
-    output_dir=Path(object.object_config[constants.object_keys.OUTPUT_DIR])
+    if constants.generic_keys.OUTPUT_DIR in object:
+        output_dir=Path(object[constants.object_keys.OUTPUT_DIR])
+    elif constants.generic_keys.OUTPUT_DIR in template_config:
+        output_dir=Path(template_config[constants.object_keys.OUTPUT_DIR])
+    else:
+        return
 
     # Name of the to be written file
     file_name=""
@@ -54,7 +95,7 @@ def generate_based_on_template(object: Object, generation_config, jinja2_env: En
         raise Exception("There is no name or id in the model_config")
 
     # Get the suffix after templatename and before jinja2, so example.sql.jinja -> .sql
-    file_extension=Path(template.name).with_suffix("").suffix
+    file_extension=Path(template.name).suffixes[0]
 
     # Full path for to be written file:
     file_path=Path(f"{output_dir.joinpath(file_name)}{file_extension}")
@@ -77,8 +118,8 @@ def clean_folders_to_be_used(ramona_project: RamonaProject):
         if constants.object_keys.OUTPUT_DIR in object.object_config: 
             folders_to_be_cleaned.add(object.object_config[constants.object_keys.OUTPUT_DIR])
 
-    if constants.project_config_keys.ALWAYS_CLEAN in ramona_project.project_config:
-        for always_to_be_cleaned_path in ramona_project.get_from_project_config(constants.project_config_keys.ALWAYS_CLEAN):
-            folders_to_be_cleaned.add(always_to_be_cleaned_path)
+    if constants.project_config_keys.GENERATED_PATHS in ramona_project.project_config:
+        for generated_paths in ramona_project.get_from_project_config(constants.project_config_keys.GENERATED_PATHS):
+            folders_to_be_cleaned.add(generated_paths)
 
     clean_folders(folders_to_be_cleaned)

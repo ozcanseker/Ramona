@@ -7,7 +7,8 @@ commands = Commands()
 
 class FileNames:
     RAMONA_CONFIG = "ramona.yaml"
-    MODEL_CONFIG = "model_config.yaml"
+    MODEL_CONFIG_NAMES = ["model_config.yaml", "model_config.yml"]
+    MODEL_CONFIG_EXTENSIONS = ["*.yaml", "*.yml"]
 
 filenames = FileNames()
 
@@ -25,6 +26,7 @@ fileloader = FileLoader()
 class GenericKeys:
     ID = "id"
     NAME = "name"
+    OUTPUT_DIR = "output_dir"
 
 generic_keys = GenericKeys()
 
@@ -32,7 +34,7 @@ generic_keys = GenericKeys()
 class ProjectConfigKeys(GenericKeys):
     MODELS_DIR = "models_dir"
     TEMPLATES_DIR = "templates_dir"
-    ALWAYS_CLEAN = "always_clean"
+    GENERATED_PATHS = "generated_paths"
     MODELCHECKS = "modelchecks_dir"
 
 project_config_keys = ProjectConfigKeys()
@@ -45,18 +47,17 @@ model_keys = ModelKeys()
 
 class ObjectKeys(GenericKeys):
     CHILD_OBJECTS = "child_objects"
-    GENERATION_CONFIG = "generation_config"
-    OUTPUT_DIR = "output_dir"
+    TEMPLATE_CONFIG = "template_config"
     FILENAME = "file_name"
 
 object_keys = ObjectKeys()
 
 
-class GenerationKeys(GenericKeys):
+class TemplateKeys(GenericKeys):
     TEMPLATE = "template"
-    COPY_TO_LOCATION = "copy_to_location"
+    COPY_FROM = "copy_from"
 
-generation_keys = GenerationKeys()
+template_keys = TemplateKeys()
 
 
 # Application configs, we can also put this in project_config.yaml but i do not want people to

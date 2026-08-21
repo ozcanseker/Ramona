@@ -1,0 +1,10 @@
+model_config:
+  output_dir: ./dags/generated
+
+  template_config:
+    - template: "./bronze_table.sql.jinja2"
+
+  models:
+    - id: dag_json
+      type: dag
+      filename: model("model_name") + el_pipeline + this("id")

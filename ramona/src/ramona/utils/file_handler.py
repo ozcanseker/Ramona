@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 from types import ModuleType
 
+from ramona.utils import constants
 import yaml
 
 
@@ -62,7 +63,7 @@ def write_file(location: Path|str, content):
     if not parent_dir.exists():
         parent_dir.mkdir(exist_ok=True, parents=True)
 
-    with open(location, "w") as f:
+    with open(location, "w", encoding="utf-8") as f:
         f.write(content)
         logger.debug(f"file written to: {location}")
 
@@ -93,7 +94,9 @@ def clean_folders( *paths: Path | str | list[Path|str] | set[Path|str]):
 def get_all_yaml_files_in_dir_and_sub_dirs(folder: Path) -> list[Path]:
     all_yaml_files=[]
 
-    files = folder.rglob("*.yaml")
+
+    files = [ path for ext in constants.filenames.MODEL_CONFIG_EXTENSIONS for path in folder.rglob(ext)]
+
     for f in files:
         all_yaml_files.append(f)
 

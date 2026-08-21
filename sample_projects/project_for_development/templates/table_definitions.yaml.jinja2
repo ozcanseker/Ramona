@@ -1,0 +1,6 @@
+{% if object.child_objects %}
+definitions:    
+{% endif %}
+{% for child_objects in object.child_objects %}
+    - {{child_objects.id}}
+{% endfor %}

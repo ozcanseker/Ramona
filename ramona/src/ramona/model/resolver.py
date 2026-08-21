@@ -9,29 +9,18 @@ from jinja2 import Environment
 
 from ramona.model.classes.RamonaProject import Model, RamonaProject
 from ramona.model.reference_resolver import TempRefClass
+from ramona.utils.classes.DataclassEncoder import DataclassEncoder
 from ramona.utils.file_handler import read_yaml_from_string
 from ..utils import constants
 
-@dataclass
+
 class ResolveContext:
-    ramona_project: RamonaProject|None=None
-    model: Model|None=None
-    scope: dict[str, Any]|None =None
-    _parents: list[dict[str, Any]]=field(default_factory=list)
-    _this: dict[str, Any]|None=None
-
-    def __post_init__(self):
-        if self.ramona_project:
-            self._parents.append(self.ramona_project.project_config)
-
-        if self.model:
-            self._parents.append(self.model.model_config)
-
-        if self.scope:
-            self._parents.append(self.scope)
-
-
-
+    def __init__(self, ramona_project=None, model=None, scope=None, _parents=[], _this=None):
+        self.ramona_project = ramona_project   
+        self.model = model
+        self.scope = scope
+        self._parents=_parents
+        self._this = _this
 
 # Ai, geen idee wat het doet
 UNQUOTED_JINJA = re.compile( r"^(?P<prefix>\s*[^:]+:\s*)(?P<jinja>{{.*}})(?P<suffix>\s*)$")
@@ -78,6 +67,7 @@ class Jinja2YamlResolver:
                     ResolveContext(
                         ramona_project=resolve_context.ramona_project,
                         model=resolve_context.model,
+                        scope=resolve_context.scope,
                         _parents=list(resolve_context._parents) + [resolve_context._this],
                         _this=object_to_resolve
                     )
@@ -89,7 +79,8 @@ class Jinja2YamlResolver:
                                   ResolveContext(
                                     ramona_project=resolve_context.ramona_project,
                                     model=resolve_context.model,
-                                    _parents=list(resolve_context._parents) + [resolve_context._this],
+                                    scope=resolve_context.scope,
+                                    _parents=list(resolve_context._parents),
                                     _this=item
                                 )) for item in object_to_resolve]
 
@@ -97,14 +88,21 @@ class Jinja2YamlResolver:
             native_jinja2_env=self._load_jinja2_env(NativeEnvironment(), resolve_context)
             resolved_object = self._resolve_jinja_template(self.placeholder_mapping[object_to_resolve], native_jinja2_env)
 
-            if isinstance(resolved_object, str):
+            # If it is a string, it is resolved, and dont need to process it further
+            # Except when i gives back a placeholder value, then we need to do one more loop
+            if isinstance(resolved_object, str) and not resolved_object in self.placeholder_mapping:
                 return resolved_object
 
             return self._resolve(resolved_object, resolve_context)
 
         if isinstance(object_to_resolve, str) :
             string_jinja2_env=self._load_jinja2_env(Environment(), resolve_context)
-            return self._resolve_jinja_template(object_to_resolve, string_jinja2_env)
+            resolved_string=self._resolve_jinja_template(object_to_resolve, string_jinja2_env)
+
+            if resolved_string in self.placeholder_mapping:
+                return self._resolve(resolved_string, resolve_context)
+
+            return resolved_string
         else:
             return object_to_resolve
 
@@ -171,17 +169,17 @@ class Jinja2YamlResolver:
         return resolve_context.model.get_from_model_config(key)  
 
     def resolver_this(self, key: str , resolve_context: ResolveContext) -> Any:
+        resolved_object=resolve_context._this[key]
+
         return resolve_context._this[key]  
 
     def resolver_scope(self, key: str , resolve_context: ResolveContext) -> Any:
-        if key in resolve_context._this:
-            return resolve_context._this[key]
-
-        for parent in reversed(resolve_context._parents):
+        # -1 because the last one is this dict. If this is the case, the user has to use this
+        for parent in reversed(resolve_context._parents[:-1]):
             if key in parent:
                 return parent[key]
 
-        raise Exception("Some error message.")
+        return self.resolver_scope(key, resolve_context)
 
     def resolver_ref(self, *args: str, resolve_context: ResolveContext) -> Any:
         model=None
