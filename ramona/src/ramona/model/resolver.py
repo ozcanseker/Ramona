@@ -99,6 +99,7 @@ class Jinja2YamlResolver:
             string_jinja2_env=self._load_jinja2_env(Environment(), resolve_context)
             resolved_string=self._resolve_jinja_template(object_to_resolve, string_jinja2_env)
 
+            # Sometimes the placeholders bleed trough, and then we have to do an extra loop
             if resolved_string in self.placeholder_mapping:
                 return self._resolve(resolved_string, resolve_context)
 
@@ -171,7 +172,11 @@ class Jinja2YamlResolver:
     def resolver_this(self, key: str , resolve_context: ResolveContext) -> Any:
         resolved_object=resolve_context._this[key]
 
-        return resolve_context._this[key]  
+        # Sometimes the placeholders bleed trough, and then we have to do an extra loop
+        if isinstance(resolved_object, str) and resolved_object in self.placeholder_mapping:
+            resolved_object = self._resolve(resolved_object, resolve_context)
+
+        return resolved_object 
 
     def resolver_scope(self, key: str , resolve_context: ResolveContext) -> Any:
         # -1 because the last one is this dict. If this is the case, the user has to use this

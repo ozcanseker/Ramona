@@ -5,5 +5,3 @@ __pycache__
 .conda
 venv
 200_secrets
-
-*/**/!.gitkeep

@@ -30,7 +30,11 @@ def main():
     # upload_json_data_to_table()
 
 def load_env_variables(project_root: Path):
-    loaded = dotenv.load_dotenv(project_root.joinpath("./200_secrets").joinpath(object["secrets_env_file"]))
+    loaded = dotenv.load_dotenv(
+        project_root
+        .joinpath("./200_secrets")
+        .joinpath("knmi.env")
+    )
     
     if not loaded:
         raise Exception("Something went wrong loading env.")
@@ -41,7 +45,7 @@ def download_json_data_to_location(project_root: Path):
     end_date= date.today().isoformat()
     start_date= (date.today() - timedelta(days=7)).isoformat()
 
-    file_name=f"KNMI_EV_24_{end_date}_{start_date}.json"
+    file_name=f"KNMI_EV24_{end_date}_{start_date}.json"
     output_pad = project_root.joinpath("00_landing_zone").joinpath(file_name)
 
     url="https://api.dataplatform.knmi.nl/edr/v1/collections/daily-in-situ-meteorological-observations/cube"
@@ -104,4 +108,4 @@ def find_file_in_parents(filename: str) -> Path:
 
 if __name__ == "__main__":
     main()
-
+    

@@ -22,7 +22,8 @@ model_config:
   objects:
     - id: EV24-dag
       params: {{ dict(scope('params'), **{'parameter-name': 'EV24'}) }}
-      output_file_name: {{ this('params') }}
+      output_file_name: "KNMI_{{ this('params')['parameter-name'] }}_{end_date}_{start_date}.json"
 
     - id: RH-dag
       params: {{ dict(scope('params'), **{'parameter-name': 'RH'}) }}
+      output_file_name: "KNMI_{{ this('params')['parameter-name'] }}_{end_date}_{start_date}.json"

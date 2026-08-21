@@ -1,8 +1,7 @@
-import json
-import logging
-from pathlib import Path
 import re
+import logging
 from typing import Any
+from pathlib import Path
 
 from ramona.model.classes.RamonaProject import Model, Object, RamonaProject
 from ramona.model.reference_resolver import resolve_references
@@ -62,7 +61,6 @@ def validate_and_correct_template_config(template_config: dict, object: Object, 
 
     if constants.generic_keys.OUTPUT_DIR not in template_config and constants.generic_keys.OUTPUT_DIR not in object:
         raise Exception("Need to at lease have one output_dir key in the object or template_config")
-
 
 
 def _validate_and_correct_project(ramona_project: RamonaProject):

@@ -1,20 +1,19 @@
 # Python libs
-import json
+import sys
 import logging
 from pathlib import Path
-import sys
-from time import sleep
-
-from ramona.generator.generator import generate_templates
-from ramona.model.classes.RamonaProject import RamonaProject
-from ramona.model.ramona_project_builder import build_ramona_project
-from ramona.modelcheck.modelchecker import run_modelchecks
-from ramona.utils import constants
-from ramona.utils.file_handler import get_abs_ramona_config_path
-from ramona.utils.classes.ApplicationArguments import ApplicationArguments
 from rich.logging import RichHandler
 
 
+from ramona.utils import constants
+from ramona.generator.generator import generate_templates
+from ramona.modelcheck.modelchecker import run_modelchecks
+from ramona.model.classes.RamonaProject import RamonaProject
+from ramona.utils.file_handler import get_abs_ramona_config_path
+from ramona.model.ramona_project_builder import build_ramona_project
+from ramona.utils.classes.ApplicationArguments import ApplicationArguments
+
+# GLobal setups
 logger=logging.getLogger(__name__)
 
 
