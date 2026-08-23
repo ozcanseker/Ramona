@@ -7,7 +7,7 @@ template_config:
 
 objects:
   - id: table_definitions
-    extends: ../extends/tables/platform_table.yaml
+    extends: 90_models/extends/tables/platform_table.yaml
     template_config: {{ this("table_template_configs") + scope("template_config") }}
     table_name: {{ this("id") }}
     columns:

@@ -13,8 +13,8 @@ secrets_env_key: "KNMI_API_KEY_EDR"
 # Template and object config
 type: dag
 objects:
-  - extends: ./../extends/knmi_dag.yml
+  - extends: 90_models/extends/knmi_dag.yml
     knmi_parameter: EV24
-  - extends: ./../extends/knmi_dag.yml
+  - extends: 90_models/extends/knmi_dag.yml
     knmi_parameter: RH
     

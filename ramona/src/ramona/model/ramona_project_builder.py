@@ -27,6 +27,8 @@ include_pattern = rf"""
     )
     """
 
+relative_path_regex = r"""relative_path\s*\(\s*["']?(?P<path>[^"'\s)]+)["']?\s*\)"""
+
 def build_ramona_project(ramona_project_config_path : str | Path):
     ramona_project: RamonaProject = load_ramona_project_config(ramona_project_config_path)
 
@@ -162,7 +164,7 @@ def load_ramona_project_config(ramona_project_config_path: str | Path):
     logger.debug(f"initalized ramona project as: \n{ramona_project}")
 
     # Set up variables so we can resolve the arguments used in 
-    ramona_project_yaml_string=read_file_combined_with_includes_and_extends(ramona_project_abs_path)
+    ramona_project_yaml_string=read_file_combined_with_includes_and_extends(ramona_project_abs_path, ramona_project)
     resolve_context=ResolveContext()
 
     resolved_project_yaml_dict=resolve_jinja_yaml(ramona_project_yaml_string, resolve_context)
@@ -176,7 +178,7 @@ def register_all_models(ramona_project: RamonaProject):
     all_model_config_file_paths_abs=get_all_models_config_files(ramona_project)
 
     for model_abs_path in all_model_config_file_paths_abs:
-        model_yaml_string=read_file_combined_with_includes_and_extends(model_abs_path)
+        model_yaml_string=read_file_combined_with_includes_and_extends(model_abs_path, ramona_project)
 
         if not model_yaml_string:
             continue
@@ -244,7 +246,7 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
     if not yaml_file_path:
         return []
 
-    yaml_file_contents=read_file_combined_with_includes_and_extends(yaml_file_path)
+    yaml_file_contents=read_file_combined_with_includes_and_extends(yaml_file_path, ramona_project)
 
     # Check if file has objects, otherwise no need because output of file is objects
     if not re.search(rf"^[\t ]*{constants.model_keys.OBJECTS}[\t ]*:", yaml_file_contents, re.MULTILINE):
@@ -254,7 +256,7 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
     final_config=dict(ramona_project.project_config) | dict(model.model_config)
 
     for parent_yaml_file in parent_yaml_files_sorted:
-        parent_yaml_content=read_file_combined_with_includes_and_extends(parent_yaml_file)
+        parent_yaml_content=read_file_combined_with_includes_and_extends(parent_yaml_file, ramona_project)
 
         if not parent_yaml_content:
             continue
@@ -312,14 +314,14 @@ def parent_yaml_files_sorted_highest_first(yaml_file_path: Path, model: Model):
     return parent_yaml_files
 
 
-def read_file_combined_with_includes_and_extends(file_path: Path):
-    final_string = resolve_includes(file_path)
-    final_string = resolve_extends(file_path, final_string)
+def read_file_combined_with_includes_and_extends(file_path: Path, ramona_project: RamonaProject):
+    final_string = resolve_includes(file_path, ramona_project)
+    final_string = resolve_extends(file_path, final_string, ramona_project)
 
     return final_string
 
 
-def resolve_includes(file_path: Path):
+def resolve_includes(file_path: Path, ramona_project: RamonaProject):
     file_path=Path(file_path)
     file_content = read_file(file_path)
     file_folder=file_path.parent
@@ -338,7 +340,11 @@ def resolve_includes(file_path: Path):
     final_string = ""
 
     for yaml_file in include_yaml[constants.generic_keys.INCLUDE]:
-        abs_path=get_abs_path(yaml_file, file_folder)
+        is_relative_path_match = re.search(relative_path_regex, yaml_file)
+        relative_folder= file_folder if is_relative_path_match else ramona_project.project_folder
+        path_to_check = is_relative_path_match.group("path") if is_relative_path_match else yaml_file
+
+        abs_path=get_abs_path(path_to_check, relative_folder)
         include_contents=read_file(Path(abs_path))
         match_include_file = re.search(
                 include_pattern,
@@ -352,7 +358,7 @@ def resolve_includes(file_path: Path):
             )
 
         if match_include_file or match_extend_file:
-            final_string = f"{final_string}\n\n{ read_file_combined_with_includes_and_extends(abs_path) }"
+            final_string = f"{final_string}\n\n{ read_file_combined_with_includes_and_extends(abs_path, ramona_project) }"
         else:
             final_string = f"{final_string}\n\n{ include_contents }"
 
@@ -364,7 +370,7 @@ def resolve_includes(file_path: Path):
     return final_string
 
 
-def resolve_extends(file_path, to_extend_string: str):
+def resolve_extends(file_path, to_extend_string: str, ramona_project: RamonaProject):
     file_path: Path =Path(file_path)
     file_folder=file_path.parent
 
@@ -392,7 +398,11 @@ def resolve_extends(file_path, to_extend_string: str):
         dash = match.group("dash") if match.group("dash") else ""
         full_indent= indent + dash.replace("-", " ")
 
-        extends_file_path = Path(get_abs_path(extends_path, file_folder))
+        is_relative_path_match = re.search(relative_path_regex, extends_path)
+        relative_folder= file_folder if is_relative_path_match else ramona_project.project_folder
+        path_to_check = is_relative_path_match.group("path") if is_relative_path_match else extends_path
+
+        extends_file_path = Path(get_abs_path(path_to_check, relative_folder))
         extend_content=read_file(extends_file_path)
         match_include_file = re.search(
                 include_pattern,
@@ -406,7 +416,7 @@ def resolve_extends(file_path, to_extend_string: str):
             )
 
         if match_include_file or match_extend_file:
-            extend_content = read_file_combined_with_includes_and_extends(extends_file_path)
+            extend_content = read_file_combined_with_includes_and_extends(extends_file_path, ramona_project)
 
 
         # Zelfde indentation geven aan iedere regel

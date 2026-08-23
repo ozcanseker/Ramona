@@ -1,4 +1,4 @@
 include:
-  - ../../includes/table_layer_configs/tables.yaml
+  - 90_models/includes/table_layer_configs/tables.yaml
 
 database: RAW
