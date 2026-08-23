@@ -11,6 +11,22 @@ from ramona.utils.file_handler import get_abs_path, get_abs_path_and_validate_if
 
 logger=logging.getLogger(__name__)
 
+extends_pattern = rf"""
+    ^(?P<indent>[ \t]*)
+    (?P<dash>-\s*)?
+    {re.escape(constants.generic_keys.EXTENDS)}
+    \s*:\s*
+    (?P<path>.+?)
+    \s*$
+    """
+
+include_pattern = rf"""
+    ^(
+        {constants.generic_keys.INCLUDE}\s*:\s*\n
+        (?:^[ \t]+-.*(?:\n|$))*
+    )
+    """
+
 def build_ramona_project(ramona_project_config_path : str | Path):
     ramona_project: RamonaProject = load_ramona_project_config(ramona_project_config_path)
 
@@ -146,7 +162,7 @@ def load_ramona_project_config(ramona_project_config_path: str | Path):
     logger.debug(f"initalized ramona project as: \n{ramona_project}")
 
     # Set up variables so we can resolve the arguments used in 
-    ramona_project_yaml_string=read_file_combined_with_includes(ramona_project_abs_path)
+    ramona_project_yaml_string=read_file_combined_with_includes_and_extends(ramona_project_abs_path)
     resolve_context=ResolveContext()
 
     resolved_project_yaml_dict=resolve_jinja_yaml(ramona_project_yaml_string, resolve_context)
@@ -160,7 +176,7 @@ def register_all_models(ramona_project: RamonaProject):
     all_model_config_file_paths_abs=get_all_models_config_files(ramona_project)
 
     for model_abs_path in all_model_config_file_paths_abs:
-        model_yaml_string=read_file_combined_with_includes(model_abs_path)
+        model_yaml_string=read_file_combined_with_includes_and_extends(model_abs_path)
 
         if not model_yaml_string:
             continue
@@ -228,7 +244,7 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
     if not yaml_file_path:
         return []
 
-    yaml_file_contents=read_file_combined_with_includes(yaml_file_path)
+    yaml_file_contents=read_file_combined_with_includes_and_extends(yaml_file_path)
 
     # Check if file has objects, otherwise no need because output of file is objects
     if not re.search(rf"^[\t ]*{constants.model_keys.OBJECTS}[\t ]*:", yaml_file_contents, re.MULTILINE):
@@ -238,7 +254,7 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
     final_config=dict(ramona_project.project_config) | dict(model.model_config)
 
     for parent_yaml_file in parent_yaml_files_sorted:
-        parent_yaml_content=read_file_combined_with_includes(parent_yaml_file)
+        parent_yaml_content=read_file_combined_with_includes_and_extends(parent_yaml_file)
 
         if not parent_yaml_content:
             continue
@@ -255,7 +271,7 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
         final_config= final_config | resolved_dict
 
     resolved_yaml_file_with_objects=resolve_jinja_yaml(
-        read_file_combined_with_includes(yaml_file_path),
+        yaml_file_contents,
         ResolveContext(
             ramona_project=ramona_project,
             model=model,
@@ -296,19 +312,21 @@ def parent_yaml_files_sorted_highest_first(yaml_file_path: Path, model: Model):
     return parent_yaml_files
 
 
-def read_file_combined_with_includes(file_path: Path):
-    file_content = read_file(file_path)
+def read_file_combined_with_includes_and_extends(file_path: Path):
+    final_string = resolve_includes(file_path)
+    final_string = resolve_extends(file_path, final_string)
 
-    pattern = rf"""
-    ^(
-        {constants.generic_keys.INCLUDE}\s*:\s*\n
-        (?:^[ \t]+-.*(?:\n|$))*
-    )
-    """
+    return final_string
+
+
+def resolve_includes(file_path: Path):
+    file_path=Path(file_path)
+    file_content = read_file(file_path)
+    file_folder=file_path.parent
 
     # Extract include part
     match = re.search(
-        pattern,
+        include_pattern,
         file_content,
         re.MULTILINE | re.VERBOSE,
     )
@@ -317,15 +335,90 @@ def read_file_combined_with_includes(file_path: Path):
         return file_content
 
     include_yaml = read_yaml_from_string(match.group(1))
-
     final_string = ""
 
     for yaml_file in include_yaml[constants.generic_keys.INCLUDE]:
-        abs_path = get_abs_path(yaml_file, file_path.parent)
+        abs_path=get_abs_path(yaml_file, file_folder)
         include_contents=read_file(Path(abs_path))
+        match_include_file = re.search(
+                include_pattern,
+                include_contents,
+                re.MULTILINE | re.VERBOSE,
+            )
+        match_extend_file = re.search(
+                include_pattern,
+                include_contents,
+                re.MULTILINE | re.VERBOSE,
+            )
 
-        final_string = f"{final_string}\n\n{include_contents}"
+        if match_include_file or match_extend_file:
+            final_string = f"{final_string}\n\n{ read_file_combined_with_includes_and_extends(abs_path) }"
+        else:
+            final_string = f"{final_string}\n\n{ include_contents }"
+
+    # Verwijder include-block uit het huidige bestand
+    file_content = (file_content[:match.start()] + file_content[match.end():] )
 
     final_string = f"{final_string}\n\n{file_content}"
     
     return final_string
+
+
+def resolve_extends(file_path, to_extend_string: str):
+    file_path: Path =Path(file_path)
+    file_folder=file_path.parent
+
+    # Extract extend part
+    match = re.search(
+        extends_pattern,
+        to_extend_string,
+        re.MULTILINE | re.VERBOSE,
+    )
+
+    if not match:
+        return to_extend_string
+
+    matches = list(re.finditer(
+        extends_pattern,
+        to_extend_string,
+        re.MULTILINE | re.VERBOSE,
+    ))
+
+    for match in reversed(matches):
+        extends_path = match.group("path").strip()
+        has_dash = True if match.group("dash") else False
+
+        indent = match.group("indent")
+        dash = match.group("dash") if match.group("dash") else ""
+        full_indent= indent + dash.replace("-", " ")
+
+        extends_file_path = Path(get_abs_path(extends_path, file_folder))
+        extend_content=read_file(extends_file_path)
+        match_include_file = re.search(
+                include_pattern,
+                extend_content,
+                re.MULTILINE | re.VERBOSE
+            )
+        match_extend_file = re.search(
+                include_pattern,
+                extend_content,
+                re.MULTILINE | re.VERBOSE
+            )
+
+        if match_include_file or match_extend_file:
+            extend_content = read_file_combined_with_includes_and_extends(extends_file_path)
+
+
+        # Zelfde indentation geven aan iedere regel
+        extend_content = "\n".join(full_indent + line for line in extend_content.splitlines())
+
+        if has_dash:
+            extend_content = indent + dash + extend_content[len(full_indent):]
+
+        to_extend_string = (
+            to_extend_string[:match.start()]
+            + extend_content
+            + to_extend_string[match.end():]
+        )
+
+    return to_extend_string

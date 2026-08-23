@@ -80,7 +80,7 @@ class Jinja2YamlResolver:
                                     ramona_project=resolve_context.ramona_project,
                                     model=resolve_context.model,
                                     scope=resolve_context.scope,
-                                    _parents=list(resolve_context._parents),
+                                    _parents=resolve_context._parents,
                                     _this=object_to_resolve
                                 )) for item in object_to_resolve]
 
@@ -195,10 +195,10 @@ class Jinja2YamlResolver:
         return resolved_object 
 
     def resolver_scope(self, key: str , resolve_context: ResolveContext) -> Any:
-        resolved_object={}
+        resolved_object=None
 
         # -1 because the last one is this dict. If this is the case, the user has to use this
-        for parent in reversed(resolve_context._parents[:-1]):
+        for parent in reversed(resolve_context._parents):
             if key in parent:
                 resolved_object = parent[key]
                 

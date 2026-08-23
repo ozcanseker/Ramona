@@ -57,7 +57,7 @@ def download_json_data_to_location(project_root: Path):
         "datetime": f"{start_date}T00:00:00Z/{end_date}T23:59:59Z",
         "f":"CoverageJSON",
         "bbox":"3.31,50.75,7.23,53.58",
-        "parameter-name":"{{object['params']['parameter-name']}}"
+        "parameter-name":"{{ object['params']['parameter-name'] }}"
     }
 
     get_http_request_with_streaming(
