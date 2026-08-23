@@ -1,0 +1,6 @@
+copy_objects:
+  # kopieer dingen
+  - id: include_folder_copy_action
+    template_config:
+      - copy_from: 95_python\include
+        output_dir: "{{ scope('generated_named_paths').orchestration_path }}/include"

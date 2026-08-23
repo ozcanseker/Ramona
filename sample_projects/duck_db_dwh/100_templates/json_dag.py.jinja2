@@ -42,15 +42,15 @@ def load_env_variables(project_root: Path):
 
 def download_json_data_to_location(project_root: Path):
     #voor nu altijd laatste 7 dagen
-    end_date= date.today().isoformat()
-    start_date= (date.today() - timedelta(days=7)).isoformat()
+    end_date=date.today().isoformat()
+    start_date=(date.today() - timedelta(days=7)).isoformat()
 
     file_name=f"{{object['output_file_name']}}"
     output_pad = project_root.joinpath("00_landing_zone").joinpath(file_name)
 
-    url="https://api.dataplatform.knmi.nl/edr/v1/collections/daily-in-situ-meteorological-observations/cube"
+    url="{{object['url']}}"
     headers={
-        "Authorization": os.getenv("KNMI_API_KEY_EDR")
+        "Authorization": os.getenv("{{object['secrets_env_key']}}")
     }
 
     params={
@@ -71,6 +71,8 @@ def download_json_data_to_location(project_root: Path):
 
 
 def hash_and_rename_file(file_path: Path) -> Path:
+    """ Gemaakt met ai, weet niet precies hoe het werkt, maar doet wat ik wil """
+
     hasher = hashlib.sha256()
 
     with open(file_path, "rb") as file:

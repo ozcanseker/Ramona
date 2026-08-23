@@ -81,7 +81,7 @@ class Jinja2YamlResolver:
                                     model=resolve_context.model,
                                     scope=resolve_context.scope,
                                     _parents=list(resolve_context._parents),
-                                    _this=item
+                                    _this=object_to_resolve
                                 )) for item in object_to_resolve]
 
         if object_to_resolve in self.placeholder_mapping:
@@ -170,21 +170,56 @@ class Jinja2YamlResolver:
         return resolve_context.model.get_from_model_config(key)  
 
     def resolver_this(self, key: str , resolve_context: ResolveContext) -> Any:
+        if key not in resolve_context._this:
+            raise Exception(f"Problem resolving this {key} in object {resolve_context._this}")
+
         resolved_object=resolve_context._this[key]
 
         # Sometimes the placeholders bleed trough, and then we have to do an extra loop
         if isinstance(resolved_object, str) and resolved_object in self.placeholder_mapping:
             resolved_object = self._resolve(resolved_object, resolve_context)
+        # The order in which the resolved happen are random, therefore a resolved key, might not be fully resolved yet
+        # Pass it trough the resolver one more to resolve it
+        elif isinstance(resolved_object, dict):
+            resolved_object = self._resolve(
+                resolved_object, 
+                resolve_context=ResolveContext(
+                                        ramona_project=resolve_context.ramona_project,
+                                        model=resolve_context.model,
+                                        scope=resolve_context.scope,
+                                        _parents=list(resolve_context._parents) + [resolve_context._this],
+                                        _this=resolved_object
+                                    )
+            )
 
         return resolved_object 
 
     def resolver_scope(self, key: str , resolve_context: ResolveContext) -> Any:
+        resolved_object={}
+
         # -1 because the last one is this dict. If this is the case, the user has to use this
         for parent in reversed(resolve_context._parents[:-1]):
             if key in parent:
-                return parent[key]
+                resolved_object = parent[key]
+                
+        # The order in which the resolved happen are random, therefore a resolved key, might not be fully resolved yet
+        # Pass it trough the resolver one more to resolve it
+        if isinstance(resolved_object, dict):
+            resolved_object = self._resolve(
+                resolved_object, 
+                resolve_context=ResolveContext(
+                                        ramona_project=resolve_context.ramona_project,
+                                        model=resolve_context.model,
+                                        scope=resolve_context.scope,
+                                        _parents=list(resolve_context._parents) + [resolve_context._this],
+                                        _this=resolved_object
+                                    )
+            )
 
-        return self.resolver_scope(key, resolve_context)
+        if not resolved_object:
+            raise Exception(f"{key} not found in scope")
+
+        return resolved_object
 
     def resolver_ref(self, *args: str, resolve_context: ResolveContext) -> Any:
         model=None

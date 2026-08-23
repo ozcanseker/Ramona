@@ -1,0 +1,14 @@
+CREATE TABLE {{object["table_name"] | upper }} (
+    {% for column in object["columns"] %}
+    {{ column.id | upper }} {{column.datatype}} {{ "NOT NULL" if column.not_null else "" }},
+    {% endfor %}
+
+    -- Batch id
+    BATCH_ID UUID NOT NULL,
+    LOADED_AT TIMESTAMP,
+    FILE_ROW_NUMBER INTEGER,
+
+    -- Source info
+    SOURCE_SYSTEM VARCHAR NOT NULL,
+    SOURCE_FILE VARCHAR
+);

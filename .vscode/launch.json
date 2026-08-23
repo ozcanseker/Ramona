@@ -8,7 +8,7 @@
             "program": "${workspaceFolder}/venv/Scripts/ramona.exe",
             "args": [
                 "-rcp",
-                ".\\sample_projects\\project_for_experimenting\\ramona.yaml",
+                ".\\sample_projects\\duck_db_dwh\\ramona.yaml",
                 "generate"
             ],
             "console": "integratedTerminal",

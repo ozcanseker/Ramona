@@ -13,6 +13,7 @@ class TempRefClass:
     project: str
     model: str
     object: str
+    original_value: str
 
 
 def resolve_references(ramona_project: RamonaProject):
@@ -36,8 +37,6 @@ def _resolver_references(object_to_resolve, ramona_project: RamonaProject):
     return _resolve_ref(object_to_resolve, ramona_project)
 
 def _resolve_ref(object_to_resolve, ramona_project: RamonaProject):
-    # print(type(object_to_resolve))
-    # print(object_to_resolve)
     if not isinstance(object_to_resolve, TempRefClass):
         return object_to_resolve
 

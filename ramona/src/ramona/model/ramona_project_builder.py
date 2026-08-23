@@ -7,7 +7,7 @@ from ramona.model.classes.RamonaProject import Model, Object, RamonaProject
 from ramona.model.reference_resolver import resolve_references
 from ramona.model.resolver import ResolveContext, resolve_jinja_yaml
 from ramona.utils import constants
-from ramona.utils.file_handler import get_abs_path, get_abs_path_and_validate_if_exists, get_abs_ramona_config_path, get_all_yaml_files_in_dir_and_sub_dirs, read_file, read_yaml_from_filepath
+from ramona.utils.file_handler import get_abs_path, get_abs_path_and_validate_if_exists, get_abs_ramona_config_path, get_all_yaml_files_in_dir_and_sub_dirs, read_file, read_yaml_from_filepath, read_yaml_from_string
 
 logger=logging.getLogger(__name__)
 
@@ -100,9 +100,10 @@ def check_if_output_folder_is_valid(to_check: Object | dict, ramona_project: Ram
         return
 
     is_in_generated_path=False
+    to_check_output_dir=Path(to_check[constants.generic_keys.OUTPUT_DIR])
 
     for generated_path in ramona_project.project_config[constants.project_config_keys.GENERATED_PATHS]:
-        if generated_path in Path(to_check[constants.generic_keys.OUTPUT_DIR]).parents:
+        if generated_path in to_check_output_dir.parents or generated_path == to_check_output_dir:
             is_in_generated_path=True
 
     if not is_in_generated_path:
@@ -145,7 +146,7 @@ def load_ramona_project_config(ramona_project_config_path: str | Path):
     logger.debug(f"initalized ramona project as: \n{ramona_project}")
 
     # Set up variables so we can resolve the arguments used in 
-    ramona_project_yaml_string=read_file(ramona_project_abs_path)
+    ramona_project_yaml_string=read_file_combined_with_includes(ramona_project_abs_path, ramona_project.project_folder)
     resolve_context=ResolveContext()
 
     resolved_project_yaml_dict=resolve_jinja_yaml(ramona_project_yaml_string, resolve_context)
@@ -159,7 +160,7 @@ def register_all_models(ramona_project: RamonaProject):
     all_model_config_file_paths_abs=get_all_models_config_files(ramona_project)
 
     for model_abs_path in all_model_config_file_paths_abs:
-        model_yaml_string=read_file(model_abs_path)
+        model_yaml_string=read_file_combined_with_includes(model_abs_path, ramona_project.project_folder)
 
         if not model_yaml_string:
             continue
@@ -227,7 +228,7 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
     if not yaml_file_path:
         return []
 
-    yaml_file_contents=read_file(yaml_file_path)
+    yaml_file_contents=read_file_combined_with_includes(yaml_file_path, ramona_project.project_folder)
 
     # Check if file has objects, otherwise no need because output of file is objects
     if not re.search(rf"^[\t ]*{constants.model_keys.OBJECTS}[\t ]*:", yaml_file_contents, re.MULTILINE):
@@ -237,7 +238,7 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
     final_config=dict(ramona_project.project_config) | dict(model.model_config)
 
     for parent_yaml_file in parent_yaml_files_sorted:
-        parent_yaml_content=read_file(parent_yaml_file)
+        parent_yaml_content=read_file_combined_with_includes(parent_yaml_file, ramona_project.project_folder)
 
         if not parent_yaml_content:
             continue
@@ -254,7 +255,7 @@ def create_squashed_template_configs(yaml_file_path: Path, model: Model, ramona_
         final_config= final_config | resolved_dict
 
     resolved_yaml_file_with_objects=resolve_jinja_yaml(
-        read_file(yaml_file_path),
+        read_file_combined_with_includes(yaml_file_path, ramona_project.project_folder),
         ResolveContext(
             ramona_project=ramona_project,
             model=model,
@@ -293,3 +294,36 @@ def parent_yaml_files_sorted_highest_first(yaml_file_path: Path, model: Model):
     )
 
     return parent_yaml_files
+
+
+def read_file_combined_with_includes(file_path: Path, base_dir: Path = None):
+    file_content = read_file(file_path)
+
+    pattern = rf"""
+    ^(
+        {constants.generic_keys.INCLUDE}\s*:\s*\n
+        (?:^[ \t]+-.*(?:\n|$))*
+    )
+    """
+
+    # Extract include part
+    match = re.search(
+        pattern,
+        file_content,
+        re.MULTILINE | re.VERBOSE,
+    )
+
+    if not match:
+        return file_content
+
+    include_yaml = read_yaml_from_string(match.group(1))
+
+    final_string = file_content
+
+    for yaml_file in include_yaml[constants.generic_keys.INCLUDE]:
+        abs_path = get_abs_path(yaml_file, base_dir)
+        include_contents=read_file(Path(abs_path))
+
+        final_string = f"{final_string}\n\n{include_contents}"
+
+    return final_string

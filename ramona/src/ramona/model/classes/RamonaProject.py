@@ -110,7 +110,7 @@ class Model:
             f"model_config_file_path={self.model_config_file_path}",
             f"model_folder={self.model_folder}",
             f"model_config=",
-            json.dumps(self.model_config, indent=4, sort_keys=True)
+            json.dumps(self.model_config, indent=4, sort_keys=True, cls=DataclassEncoder)
         ])
 
 

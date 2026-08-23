@@ -1,29 +1,27 @@
-model_config:
-  # Generator config
-  output_dir: "{{ project('generated_named_paths').dags_path }}"
+# Generator config
+output_dir: "{{ project('generated_named_paths').dags_path }}"
+template_config:
+  - template: ./json_dag.py.jinja2
 
-  # Endpoint config
-  url: "https://api.dataplatform.knmi.nl/edr/v1/collections/daily-in-situ-meteorological-observations/cube"
+# Endpoint config
+url: "https://api.dataplatform.knmi.nl/edr/v1/collections/daily-in-situ-meteorological-observations/cube"
+params:
+  datetime: "{start_date}T00:00:00Z/{end_date}T23:59:59Z"
+  f: "CoverageJSON"
+  bbox: "3.31,50.75,7.23,53.58"
 
-  # Secrets config
-  secrets_env_file: "knmi.env"  
-  secrets_env_key: "KNMI_API_KEY_EDR"
+# Secrets config
+secrets_env_file: "knmi.env"  
+secrets_env_key: "KNMI_API_KEY_EDR"
 
-  # Configs paths that are needed in the template
-  params:
-    datetime: "{start_date}T00:00:00Z/{end_date}T23:59:59Z"
-    f: "CoverageJSON"
-    bbox: "3.31,50.75,7.23,53.58"
+# Template and object config
+type: dag
+objects:
+  - id: EV24-dag
+    params: {{ dict(scope('params'), **{'parameter-name': 'EV24'}) }}
+    output_file_name: "KNMI_{{ this('params')['parameter-name'] }}_{end_date}_{start_date}.json"
 
-  # Template and object config
-  template_config:
-    - template: ./json_dag.py.jinja2
-
-  objects:
-    - id: EV24-dag
-      params: {{ dict(scope('params'), **{'parameter-name': 'EV24'}) }}
-      output_file_name: "KNMI_{{ this('params')['parameter-name'] }}_{end_date}_{start_date}.json"
-
-    - id: RH-dag
-      params: {{ dict(scope('params'), **{'parameter-name': 'RH'}) }}
-      output_file_name: "KNMI_{{ this('params')['parameter-name'] }}_{end_date}_{start_date}.json"
+  - id: RH-dag
+    params: {{ dict(scope('params'), **{'parameter-name': 'RH'}) }}
+    output_file_name: "KNMI_{{ this('params')['parameter-name'] }}_{end_date}_{start_date}.json"
+    

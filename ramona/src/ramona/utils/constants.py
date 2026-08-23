@@ -27,6 +27,7 @@ class GenericKeys:
     ID = "id"
     NAME = "name"
     OUTPUT_DIR = "output_dir"
+    INCLUDE = "include"
 
 generic_keys = GenericKeys()
 

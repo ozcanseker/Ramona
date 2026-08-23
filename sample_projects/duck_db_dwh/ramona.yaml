@@ -1,19 +1,26 @@
-project_config:
-  # Protected keywords
-  id: duck_db
+include:
+  - ./90_models/includes/project_includes.yaml
+  - ./90_models/includes/copy_objects.yml
 
-  models_dir: ./90_models/
-  templates_dir: ./100_templates/
-  modelchecks_dir: ./modelchecks/
+# Protected keywords
+id: duck_db
 
-  generated_paths: {{ this('generated_named_paths').values() | list }}
-    
-  # Non protected keywords
-  # Everything added here will be deleted
-  generated_named_paths: 
-    sql_output_dir: "./10_sql/"
-    orchestration_path: ./20_orchestration/
-    dags_path: ./20_orchestration/dags
+models_dir: ./90_models/
 
-  named_paths:
-    secrets_path: ./200_secrets
+templates_dir: ./100_templates/
+modelchecks_dir: ./modelchecks/
+
+generated_paths: {{ this('generated_named_paths').values() | list }}
+  
+# Non protected keywords
+# Everything added here will be deleted
+generated_named_paths: 
+  sql_output_dir: "./10_sql/"
+  definitions_output_dir: "./{{ this('sql_output_dir') }}definitions"
+  orchestration_path: ./20_orchestration/
+  dags_path: "{{ this('orchestration_path') }}dags"
+
+named_paths:
+  secrets_path: ./200_secrets
+
+objects: {{ this('project_objects') + this('copy_objects') }}

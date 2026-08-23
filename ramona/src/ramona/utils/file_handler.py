@@ -94,7 +94,6 @@ def clean_folders( *paths: Path | str | list[Path|str] | set[Path|str]):
 def get_all_yaml_files_in_dir_and_sub_dirs(folder: Path) -> list[Path]:
     all_yaml_files=[]
 
-
     files = [ path for ext in constants.filenames.MODEL_CONFIG_EXTENSIONS for path in folder.rglob(ext)]
 
     for f in files:
@@ -109,10 +108,7 @@ def read_yaml_from_string(yaml_string: str):
     if not yaml_dict:
         raise Exception("problem reading from string")
 
-    # There is always an outer_dict because of how the yaml is constructed, this is never needed, so pop this
-    _, inner_dict = yaml_dict.popitem()
-
-    return inner_dict
+    return yaml_dict
 
 def read_yaml_from_filepath(filepath: Path):
     file_contents=read_file(filepath)
