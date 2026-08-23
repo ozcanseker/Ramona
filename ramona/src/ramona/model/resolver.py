@@ -81,7 +81,7 @@ class Jinja2YamlResolver:
                                     model=resolve_context.model,
                                     scope=resolve_context.scope,
                                     _parents=resolve_context._parents,
-                                    _this=object_to_resolve
+                                    _this=resolve_context._this
                                 )) for item in object_to_resolve]
 
         if object_to_resolve in self.placeholder_mapping:

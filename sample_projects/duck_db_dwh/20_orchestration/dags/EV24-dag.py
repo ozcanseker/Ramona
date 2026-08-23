@@ -50,14 +50,14 @@ def download_json_data_to_location(project_root: Path):
 
     url="https://api.dataplatform.knmi.nl/edr/v1/collections/daily-in-situ-meteorological-observations/cube"
     headers={
-        "Authorization": os.getenv("KNMI_API_KEY_EDR")
+        "Authorization": os.getenv("KNMI_API_KEY_EDR"),
     }
 
     params={
         "datetime": f"{start_date}T00:00:00Z/{end_date}T23:59:59Z",
-        "f":"CoverageJSON",
-        "bbox":"3.31,50.75,7.23,53.58",
-        "parameter-name":"EV24"
+        "f": "CoverageJSON",
+        "bbox": "3.31,50.75,7.23,53.58",
+        "parameter-name": "EV24",
     }
 
     get_http_request_with_streaming(

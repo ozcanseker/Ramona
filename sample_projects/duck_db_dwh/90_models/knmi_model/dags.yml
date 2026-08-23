@@ -7,7 +7,7 @@ template_config:
 url: "https://api.dataplatform.knmi.nl/edr/v1/collections/daily-in-situ-meteorological-observations/cube"
 
 # Secrets config
-secrets_env_file: "knmi.env"  
+secrets_env_file: "knmi.env"
 secrets_env_key: "KNMI_API_KEY_EDR"
 
 # Template and object config

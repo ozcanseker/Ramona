@@ -1,3 +1,16 @@
+{%- macro format_string(value, quoted=true, is_format_string=false) -%}
+    {%- set quoted = quoted | default(true)  %}
+    {%- set is_format_string = is_format_string | default(false)  %}
+
+    {%- if quoted -%}
+        {{- 'f"' if is_format_string else '"' -}}
+        {{- value -}}
+        {{- '"' -}}
+    {%- else -%}
+        {{- value -}}
+    {%- endif -%}
+{%- endmacro -%}
+
 from datetime import date, timedelta
 import hashlib
 import os
@@ -50,14 +63,15 @@ def download_json_data_to_location(project_root: Path):
 
     url="{{object['url']}}"
     headers={
-        "Authorization": os.getenv("{{object['secrets_env_key']}}")
+        {% for header in object['headers'] %}
+        "{{ header.id }}": {{ format_string(header.value, header.quoted, header.is_format_string) }},
+        {% endfor %}
     }
 
     params={
-        "datetime": f"{start_date}T00:00:00Z/{end_date}T23:59:59Z",
-        "f":"CoverageJSON",
-        "bbox":"3.31,50.75,7.23,53.58",
-        "parameter-name":"{{ object['params']['parameter-name'] }}"
+        {% for param in object['params'] %}
+        "{{ param.id }}": {{ format_string(param.value, param.quoted, param.is_format_string) }},
+        {% endfor %}
     }
 
     get_http_request_with_streaming(

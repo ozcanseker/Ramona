@@ -1,8 +1,18 @@
 params:
-  datetime: "{start_date}T00:00:00Z/{end_date}T23:59:59Z"
-  f: "CoverageJSON"
-  bbox: "3.31,50.75,7.23,53.58"
-  parameter-name: {{ scope("knmi_parameter") }}
+  - id: datetime
+    value: "{start_date}T00:00:00Z/{end_date}T23:59:59Z"
+    is_format_string: True
+  - id: f
+    value: "CoverageJSON"
+  - id: bbox
+    value: "3.31,50.75,7.23,53.58"
+  - id: parameter-name
+    value: {{ scope("knmi_parameter") }}
 
-output_file_name: "KNMI_{{ this('params')['parameter-name'] }}_{end_date}_{start_date}.json"
+headers:
+  - id: Authorization
+    value: os.getenv("{{ scope("secrets_env_key") }}")
+    quoted: False
+
+output_file_name: "KNMI_{{ this('knmi_parameter') }}_{end_date}_{start_date}.json"
 id: "{{ this('knmi_parameter') }}-dag"
