@@ -11,9 +11,6 @@ objects:
     template_config: {{ this("table_template_configs") + scope("template_config") }}
     table_name: {{ this("id") }}
     columns:
-      - id: file_path_duckdb_folder
-        datatype: VARCHAR
-        not_null: True
       - id: environment
         datatype: VARCHAR
         not_null: True
