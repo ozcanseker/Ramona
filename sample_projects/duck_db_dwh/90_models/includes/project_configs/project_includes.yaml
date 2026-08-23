@@ -1,5 +1,5 @@
 project_objects:
   - id: table_definitions
     template_config:
-    - template: ./tables/table_definitions.csv.jinja2
+    - template: ./definitions/table_definitions.csv.jinja2
     output_dir: "{{ scope('generated_named_paths').definitions_output_dir }}"

@@ -1,1 +1,3 @@
-test
+file_path_duckdb_folder;environment;database;schema;tablename;file_location
+./05_duckdb;RAW;KNMI;REFERENTIE_GEWAS_VERDAMPING;10_sql/RAW/KNMI/EV24-table.sql
+./05_duckdb;RAW;KNMI;ETMAALSOM_NEERSLAG;10_sql/RAW/KNMI/RH-table.sql

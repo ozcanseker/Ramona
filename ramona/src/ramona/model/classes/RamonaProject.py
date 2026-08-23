@@ -182,6 +182,18 @@ class Object:
             json.dumps(self.object_config, indent=4, sort_keys=True, cls=DataclassEncoder)
         ])
 
+    def __or__(self, other):
+        return Object(
+            self.object_config_file_path,
+            self.object_config | other
+        )
+
+    def clone(self):
+        return Object(
+            self.object_config_file_path,
+            dict(self.object_config)
+        )
+
     @property
     def id(self):
         return self.object_config['id']

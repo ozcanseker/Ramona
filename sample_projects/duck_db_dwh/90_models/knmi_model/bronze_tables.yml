@@ -1,11 +1,11 @@
-# Generator config
-output_dir: "./{{ project('generated_named_paths').sql_output_dir }}/"
-template_config:
-  - template: ./tables/bronze.sql.jinja2
+include:
+  - ./../includes/table_layer_configs/raw_tables.yaml
 
-# Table config
-type: table
-layer: RAW
+# Generator config
+output_dir: "./{{ project('generated_named_paths').sql_output_dir }}/{{ this('database') }}/{{ this('schema') }}"
+template_config:
+  - template: ./tables/raw_tables.sql.jinja2
+
 schema: KNMI
 json_table:
   columns:
@@ -19,7 +19,6 @@ objects:
     description: "Referentiegewasverdamping (Makkink) (in 0.1 mm)"
     columns: {{ scope("json_table").columns }}
         
-
   - id: RH-table
     table_name: Etmaalsom_neerslag
     description: "Etmaalsom van de neerslag (in 0.1 mm) (-1 voor <0.05 mm)"

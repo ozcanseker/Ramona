@@ -1,5 +1,0 @@
-db_folder;folder_name;DB;SCHEMA
-05_duckdb;dev;RAW;KNMI
-05_duckdb;dev;RAW_ACCESS;KNMI
-05_duckdb;dev;BUSINESS;knmi
-05_duckdb;dev;DELIVERY;

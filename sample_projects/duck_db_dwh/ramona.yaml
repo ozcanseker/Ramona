@@ -1,6 +1,7 @@
 include:
-  - ./90_models/includes/project_includes.yaml
-  - ./90_models/includes/copy_objects.yml
+  - ./90_models/includes/project_configs/project_includes.yaml
+  - ./90_models/includes/project_configs/copy_objects.yml
+  - ./90_models/includes/project_configs/iac.yml
 
 # Protected keywords
 id: duck_db
@@ -21,6 +22,7 @@ generated_named_paths:
   dags_path: "{{ this('orchestration_path') }}dags"
 
 named_paths:
+  duckdb_folder: ./05_duckdb
   secrets_path: ./200_secrets
 
 objects: {{ this('project_objects') + this('copy_objects') }}
