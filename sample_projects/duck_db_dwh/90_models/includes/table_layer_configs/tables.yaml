@@ -10,3 +10,4 @@ table_template_configs:
     file_name: table_definitions
 
 table_name: {{ this("id") }}
+file_name: {{ this("table_name") | upper }}
