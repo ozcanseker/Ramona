@@ -1,0 +1,12 @@
+# Table config
+type: table
+table_output_dir: "{{ project('generated_named_paths').sql_output_dir }}/{{ this('database') }}/{{ scope('schema') }}"
+output_dir: {{ this("table_output_dir") }}
+
+table_template_configs:
+  - template: ./definitions/table_definitions.csv.jinja2
+    output_dir: "{{ project('generated_named_paths').definitions_output_dir }}"
+    append: True
+    file_name: table_definitions
+
+table_name: {{ this("id") }}

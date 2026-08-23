@@ -4,7 +4,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, pass_context
 from ramona.model.classes.RamonaProject import Object, RamonaProject
 from ramona.utils import constants
-from ramona.utils.file_handler import clean_folders, get_abs_path, get_abs_path_and_validate_if_exists, write_file
+from ramona.utils.file_handler import append_file, clean_folders, get_abs_path_and_validate_if_exists, write_file
 
 
 logger=logging.getLogger(__name__)
@@ -28,7 +28,6 @@ def generate_templates(ramona_project: RamonaProject):
             continue
 
         for template_config in object.object_config[constants.object_keys.TEMPLATE_CONFIG]:
-
             if constants.template_keys.TEMPLATE in template_config:
                 generate_based_on_template(object.clone() | template_config, ramona_project, jinja2_env)
 
@@ -67,13 +66,26 @@ def copy_over_file(object: Object):
 
 
 def generate_based_on_template(object: Object, ramona_project: RamonaProject, jinja2_env: Environment):
+    append=object[constants.template_keys.APPEND] if  constants.template_keys.APPEND in object else False
+
     # Get the output
     logger.debug(f"Generating {object.id} with template: {object[constants.template_keys.TEMPLATE]}")
     template = jinja2_env.get_template(object[constants.template_keys.TEMPLATE])
-    output = template.render(object=object, project=ramona_project, template_config=object, constants=constants)
-    file_path=get_full_file_location(object, object)
+    logger.debug(f"generating with object\n{object}")
 
-    write_file(file_path , output)
+    file_path: Path=get_full_file_location(object)
+    output = template.render(
+                    object=object, 
+                    project=ramona_project, 
+                    template_config=object, 
+                    constants=constants, 
+                    first_object_to_generate=not file_path.exists()
+                )
+    
+    if append:
+        append_file(file_path, output)
+    else: 
+        write_file(file_path, output)
     
 
 def create_jinja2_env(tempalte_location: Path) -> Environment:
@@ -103,7 +115,7 @@ def clean_folders_to_be_used(ramona_project: RamonaProject):
     clean_folders(folders_to_be_cleaned)
 
 
-def get_full_file_location(template_config, object: Object):
+def get_full_file_location(object: Object):
     output_dir=None
     
     # The output dir 
@@ -116,7 +128,7 @@ def get_full_file_location(template_config, object: Object):
     file_name=get_file_name(object)
 
     # Get the suffix after templatename and before jinja2, so example.sql.jinja -> .sql
-    file_extension=Path(template_config[constants.template_keys.TEMPLATE]).suffixes[0]
+    file_extension=Path(object[constants.template_keys.TEMPLATE]).suffixes[0]
 
     # Full path for to be written file:
     return Path(f"{output_dir.joinpath(file_name)}{file_extension}")

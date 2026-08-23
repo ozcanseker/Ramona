@@ -1,7 +1,0 @@
-layer: PHYSICAL_METADATA
-
-objects:
-  - id: table_definitions
-    table_name: {{ this("id") }}
-    columns:
-      - id: 

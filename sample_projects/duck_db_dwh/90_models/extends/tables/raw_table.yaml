@@ -1,0 +1,4 @@
+include:
+  - ../../includes/table_layer_configs/tables.yaml
+
+database: RAW

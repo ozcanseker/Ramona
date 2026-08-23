@@ -1,0 +1,31 @@
+schema: PHYSICAL_METADATA
+type: table
+output_dir: "./{{ project('generated_named_paths').sql_output_dir }}/{{ model('database') }}/{{ scope('schema') }}"
+
+template_config:
+  - template: ./tables/platform_tables.sql.jinja2
+
+objects:
+  - id: table_definitions
+    extends: ../extends/tables/platform_table.yaml
+    template_config: {{ this("table_template_configs") + scope("template_config") }}
+    table_name: {{ this("id") }}
+    columns:
+      - id: file_path_duckdb_folder
+        datatype: VARCHAR
+        not_null: True
+      - id: environment
+        datatype: VARCHAR
+        not_null: True
+      - id: database
+        datatype: VARCHAR
+        not_null: True
+      - id: schema
+        datatype: VARCHAR
+        not_null: True
+      - id: tablename
+        datatype: VARCHAR
+        not_null: True
+      - id: file_location
+        datatype: VARCHAR
+        not_null: True

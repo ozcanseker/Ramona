@@ -1,5 +1,4 @@
 include:
-  - ./90_models/includes/project_configs/project_includes.yaml
   - ./90_models/includes/project_configs/copy_objects.yml
   - ./90_models/includes/project_configs/iac.yml
 
@@ -25,4 +24,4 @@ named_paths:
   duckdb_folder: ./05_duckdb
   secrets_path: ./200_secrets
 
-objects: {{ this('project_objects') + this('copy_objects') }}
+objects: {{ this('copy_objects') }}

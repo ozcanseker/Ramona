@@ -54,6 +54,18 @@ def get_abs_path(filepath: str|Path, abs_base_dir:Path=None) -> Path:
     return filepath
 
 
+def append_file(location: Path|str, content):
+    parent_dir=Path(location).parent
+
+    if not parent_dir.exists():
+        parent_dir.mkdir(exist_ok=True, parents=True)
+
+    with open(location, "a", encoding="utf-8") as f:
+        f.write(content)
+        f.write("\n")
+        logger.debug(f"Appended to file: {location}")
+
+
 def write_file(location: Path|str, content):
     parent_dir=Path(location).parent
 

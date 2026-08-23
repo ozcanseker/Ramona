@@ -1,10 +1,8 @@
+{%- if first_object_to_generate %}
 file_path_duckdb_folder;environment;database;schema;tablename;file_location
-{% for env in project["db_environments"] %}
-{% for cobject in object.child_objects if cobject["type"] and cobject["type"] == "table"  %}
-    {{- project.named_paths.duckdb_folder }};
-    {{- cobject.database }};
-    {{- cobject.schema }};
-    {{- cobject.table_name | upper }};
-    {{- to_relative_path(cobject[constants.generic_keys.OUTPUT_DIR]) }}/{{ get_file_name(cobject) }}.sql
-{% endfor%}
-{% endfor %}
+{% endif %}
+{{- project.named_paths.duckdb_folder }};
+{{- object.database }};
+{{- object.schema }};
+{{- object.table_name | upper }};
+{{- object["table_output_dir"] }}/{{ object["table_name"] }}.sql

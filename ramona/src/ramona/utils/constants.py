@@ -58,6 +58,7 @@ object_keys = ObjectKeys()
 class TemplateKeys(GenericKeys):
     TEMPLATE = "template"
     COPY_FROM = "copy_from"
+    APPEND = "append"
 
 template_keys = TemplateKeys()
 
