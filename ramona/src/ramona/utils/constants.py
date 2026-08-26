@@ -38,6 +38,7 @@ class ProjectConfigKeys(GenericKeys):
     TEMPLATES_DIR = "templates_dir"
     GENERATED_PATHS = "generated_paths"
     MODELCHECKS = "modelchecks_dir"
+    GENERATOR_GLOBALS = "generator_globals"
 
 project_config_keys = ProjectConfigKeys()
 

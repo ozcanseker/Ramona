@@ -1,5 +1,8 @@
+import importlib
 import logging
 from pathlib import Path
+import inspect
+from types import ModuleType
 
 from jinja2 import Environment, FileSystemLoader, pass_context
 from ramona.model.classes.RamonaProject import Object, RamonaProject
@@ -17,6 +20,8 @@ def generate_templates(ramona_project: RamonaProject):
         ramona_project.project_config[constants.project_config_keys.TEMPLATES_DIR],
         ramona_project.project_folder)
     jinja2_env = create_jinja2_env(templates_dir)
+    load_generator_global_modules(jinja2_env, ramona_project)
+
     logger.debug(f"Jinja2 env initalized at folder {templates_dir}")
 
     logger.info("Cleaning folders to be used...")
@@ -95,7 +100,6 @@ def create_jinja2_env(tempalte_location: Path) -> Environment:
         trim_blocks=True
     )
 
-    env.globals["to_relative_path"] = to_relative_path
     env.globals["get_file_name"] = get_file_name
 
     return env
@@ -134,12 +138,6 @@ def get_full_file_location(object: Object):
     return Path(f"{output_dir.joinpath(file_name)}{file_extension}")
 
 
-@pass_context
-def to_relative_path(context, file_path):
-    proj: RamonaProject = context["project"]
-    return Path(file_path).relative_to(proj.project_folder).as_posix()
-
-
 def get_file_name(object):
     file_name = ""
 
@@ -154,3 +152,32 @@ def get_file_name(object):
 
     return file_name
 
+
+def register_generator_globals(env: Environment, module: ModuleType) -> None:
+    for name, function in inspect.getmembers(module, inspect.isfunction):
+        if not getattr(function, "_ramona_generator_global", False):
+            continue
+
+        env.globals[name] = function
+
+
+def load_generator_global_modules(env: Environment, ramona_project: RamonaProject ) -> None:
+    if constants.project_config_keys.GENERATOR_GLOBALS not in  ramona_project:
+        return
+
+    abs_file_path: Path = get_abs_path_and_validate_if_exists(
+                        ramona_project[constants.project_config_keys.GENERATOR_GLOBALS],
+                        ramona_project.project_folder
+                    )
+
+    for global_module in abs_file_path.rglob('*.py'):
+        module_name = (
+                    f"ramona_generator_globals_"
+                    f"{abs_file_path.stem}_"
+                    f"{abs(hash(abs_file_path))}"
+                )
+        spec = importlib.util.spec_from_file_location( module_name, global_module )
+        module = importlib.util.module_from_spec(spec)
+
+        spec.loader.exec_module(module)
+        register_generator_globals(env, module)

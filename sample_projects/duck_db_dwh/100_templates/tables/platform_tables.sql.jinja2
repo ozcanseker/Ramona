@@ -1,5 +1,5 @@
 CREATE TABLE {{object["table_name"] | upper }} (
     {% for column in object["columns"] %}
-    {{ column.id | upper }} {{ column.datatype }} {{ "NOT NULL" if column.not_null else "" }}{{ "," if not loop.last }}
+    {{ column.id | upper }} {{ column.datatype }} {{ "NOT NULL" if column.not_null else "" }}{{ "," if not loop.last }}  
     {% endfor %}
 );

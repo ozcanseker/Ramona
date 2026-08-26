@@ -1,8 +1,10 @@
 {%- if first_object_to_generate %}
-file_path_duckdb_folder;environment;database;schema;tablename;file_location
+file_path_duckdb_folder;environment;database;schema;tablename;file_location;hash
 {% endif %}
 {{- project.named_paths.duckdb_folder }};
+{{- "dev" }};
 {{- object.database }};
 {{- object.schema }};
 {{- object.table_name | upper }};
-{{- object["table_output_dir"] }}/{{ object["table_name"] }}.sql
+{{- object["table_output_dir"] }}/{{ object["table_name"] }}.sql;
+{{-  sql_file_hash((project.project_folder | string) + "/" + object["table_output_dir"] + "/"  + object["table_name"] + ".sql") }}

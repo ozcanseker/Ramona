@@ -1,4 +1,4 @@
-file_path_duckdb_folder;environment;database;schema;tablename;file_location
-./05_duckdb;RAW;KNMI;REFERENTIE_GEWAS_VERDAMPING;./10_sql//RAW/KNMI/Referentie_gewas_verdamping.sql
-./05_duckdb;RAW;KNMI;ETMAALSOM_NEERSLAG;./10_sql//RAW/KNMI/Etmaalsom_neerslag.sql
-./05_duckdb;PLATFORM_DB;PHYSICAL_METADATA;TABLE_DEFINITIONS;./10_sql//PLATFORM_DB/PHYSICAL_METADATA/table_definitions.sql
+file_path_duckdb_folder;environment;database;schema;tablename;file_location;hash
+./05_duckdb;dev;RAW;KNMI;REFERENTIE_GEWAS_VERDAMPING;./10_sql//RAW/KNMI/Referentie_gewas_verdamping.sql;2b8ece6e8111ed23
+./05_duckdb;dev;RAW;KNMI;ETMAALSOM_NEERSLAG;./10_sql//RAW/KNMI/Etmaalsom_neerslag.sql;7aa334706ff34470
+./05_duckdb;dev;PLATFORM_DB;PHYSICAL_METADATA;TABLE_DEFINITIONS;./10_sql//PLATFORM_DB/PHYSICAL_METADATA/table_definitions.sql;45b341c1ab2d6e8b

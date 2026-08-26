@@ -9,6 +9,7 @@ models_dir: ./90_models/
 
 templates_dir: ./100_templates/
 modelchecks_dir: ./modelchecks/
+generator_globals: ./70_generator_globals
 
 generated_paths: {{ this('generated_named_paths').values() | list }}
   
