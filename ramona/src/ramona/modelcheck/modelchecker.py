@@ -61,6 +61,7 @@ def get_modelchecks_folder(ramona_project: RamonaProject) -> Path:
     return get_abs_path_and_validate_if_exists(rel_folder, ramona_project.project_folder)
 
 
+# TODO: The same code is used in the generator, which should be brought under utils
 def load_checks(modelchecks_dir: Path ):
     all_checks : list[ModelCheck] = []
 
@@ -83,7 +84,6 @@ def load_checks(modelchecks_dir: Path ):
     return all_checks
 
 
-
 def apply_config_to_modelcheck( modelcheck: ModelCheck, config: ModelCheckConfig) -> ModelCheck:
     if modelcheck.severity is None:
         modelcheck.severity = config.severity
@@ -95,7 +95,7 @@ def apply_config_to_modelcheck( modelcheck: ModelCheck, config: ModelCheckConfig
 
     return modelcheck
 
-
+# TODO: Write this to json first, and then print from json
 def print_results(modelchecks: list[ModelCheck]):
     console = Console()
     modelchecks.sort(key=lambda modelcheck: (modelcheck.filepath, modelcheck.name) )

@@ -160,7 +160,7 @@ def register_generator_globals(env: Environment, module: ModuleType) -> None:
 
         env.globals[name] = function
 
-
+# TODO: The same code is used in the modelchecker, which should be brought under utils
 def load_generator_global_modules(env: Environment, ramona_project: RamonaProject ) -> None:
     if constants.project_config_keys.GENERATOR_GLOBALS not in  ramona_project:
         return
