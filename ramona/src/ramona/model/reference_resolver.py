@@ -13,8 +13,17 @@ class TempRefClass:
     project: str
     model: str
     object: str
-    original_value: str
+    original_value: str = ""
+    attributes: tuple[str, ...] = ()
 
+    def __getattr__(self, name: str):
+        return TempRefClass(
+            project=self.project,
+            model=self.model,
+            object=self.object,
+            original_value=self.original_value,
+            attributes=self.attributes + (name,)
+        )
 
 def resolve_references(ramona_project: RamonaProject):
     all_objects=ramona_project.get_all_objects_as_list()
@@ -40,7 +49,11 @@ def _resolve_ref(object_to_resolve, ramona_project: RamonaProject):
     if not isinstance(object_to_resolve, TempRefClass):
         return object_to_resolve
 
-    object_to_resolve: TempRefClass = object_to_resolve
-    model=ramona_project.get_model_from_key(object_to_resolve.model)
-    object=model.get_object_from_key(object_to_resolve.object)
-    return object
+    temp_ref = object_to_resolve
+    model = ramona_project.get_model_from_key(temp_ref.model)
+    resolved_object = model.get_object_from_key(temp_ref.object)
+
+    for attribute in temp_ref.attributes:
+        resolved_object = getattr(resolved_object, attribute)
+
+    return resolved_object

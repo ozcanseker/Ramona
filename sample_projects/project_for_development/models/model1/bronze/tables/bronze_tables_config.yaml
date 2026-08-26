@@ -1,9 +1,8 @@
-model_config:
-  type: table
+type: table
 
-  # Generation config 
-  output_dir: '{{ project("named_paths").sql_output_dir + model("id") + "/bronze" }}' 
-  
-  
-  template_config:
-    - template: "./bronze_table.sql.jinja2"
+# Generation config 
+output_dir: '{{ project("named_paths").sql_output_dir + model("id") + "/bronze" }}' 
+
+
+template_config:
+  - template: "./bronze_table.sql.jinja2"

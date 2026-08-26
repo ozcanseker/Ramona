@@ -1,3 +1,2 @@
-model_config:
-  # Physical metadata
-  schema: BRONZE
+# Physical metadata
+schema: BRONZE

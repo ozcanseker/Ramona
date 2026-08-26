@@ -1,12 +1,11 @@
-model_config:
-  objects:
-    - file_name: file_name_table
-      id: table3
-      name: table_with_alias
-      columns:
-        - id: column1
-          name: column1_alias
-          datatype: VARCHAR(1234)
-        - id: column2
-          name: column2_alias
-          datatype: VARCHAR(1234)
+objects:
+  - file_name: file_name_table
+    id: table3
+    name: table_with_alias
+    columns:
+      - id: column1
+        name: column1_alias
+        datatype: VARCHAR(1234)
+      - id: column2
+        name: column2_alias
+        datatype: VARCHAR(1234)

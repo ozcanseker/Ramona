@@ -1,3 +1,4 @@
+import json
 import re
 import logging
 from typing import Any
@@ -8,6 +9,8 @@ from ramona.model.reference_resolver import resolve_references
 from ramona.model.resolver import ResolveContext, resolve_jinja_yaml
 from ramona.utils import constants
 from ramona.utils.file_handler import get_abs_path, get_abs_path_and_validate_if_exists, get_abs_ramona_config_path, get_all_yaml_files_in_dir_and_sub_dirs, read_file, read_yaml_from_filepath, read_yaml_from_string
+
+from ramona.utils.classes.DataclassEncoder import DataclassEncoder
 
 logger=logging.getLogger(__name__)
 

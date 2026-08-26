@@ -228,16 +228,15 @@ class Jinja2YamlResolver:
         if len(args) == 1:
             model=resolve_context.model
             object=args[0]
-            
-        if len(args) == 2:
+        elif len(args) == 2:
             model=resolve_context.ramona_project.get_model_from_key(args[0])
             object=args[1]
 
-        if len(args) > 2:
-            raise Exception("The ref argument is used with 1 or 2 arguments.")
+        else:
+            raise Exception( "The ref argument is used with 1 or 2 arguments.")
 
         return TempRefClass(
             resolve_context.ramona_project.id if "id" in resolve_context.ramona_project.id else "",
-            model.id,
-            object
-         )
+            model=model.id,
+            object=object
+        )
