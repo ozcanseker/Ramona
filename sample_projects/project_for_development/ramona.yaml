@@ -1,23 +1,22 @@
-ramona_project:
-  # Must variables
-  id: sample_project_1
-  name: "{{ this('id') }}_name"
+# Must variables
+id: sample_project_1
+name: "{{ this('id') }}_name"
 
-  models_dir: ./models/
-  templates_dir: ./templates/
-  modelchecks_dir: ./modelchecks/
+models_dir: ./models/
+templates_dir: ./templates/
+modelchecks_dir: ./modelchecks/
 
-  generated_paths: {{ this('named_paths').values() | list }}
+generated_paths: {{ this('named_paths').values() | list }}
 
-  # Non protected keywords
-  named_paths:
-    sql_output_dir: "./sql/"
-    dag_output_dir: "./dags/generated/"
+# Non protected keywords
+named_paths:
+  sql_output_dir: "./sql/"
+  dag_output_dir: "./dags/generated/"
 
 
-  objects:
-    - id: "table_definitions"
-      type: "global_object"
-      output_dir: "{{ scope('named_paths').sql_output_dir }}/definitions/"
-      template_config: 
-        - template: "./table_definitions.yaml.jinja2"
+objects:
+  - id: "table_definitions"
+    type: "global_object"
+    output_dir: "{{ scope('named_paths').sql_output_dir }}/definitions/"
+    template_config: 
+      - template: "./table_definitions.yaml.jinja2"
