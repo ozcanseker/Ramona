@@ -240,12 +240,13 @@ class Jinja2YamlResolver:
         else:
             raise Exception( "The ref argument is used with 1 or 2 arguments.")
 
+        # For now check in this way if the resolver is parsing the projects
+        if not resolve_context.model:
+            raise NotImplementedError("References to objects in project do not work yet")
         if not object:
             raise Exception("Reference to object is undefined, make sure it is quoted")
         if not model:
             raise Exception("Reference to object is undefined, make sure it is quoted")
-        if not resolve_context.model:
-            raise NotImplementedError("References to objects in project do not work yet")
 
 
         return TempRefClass(
