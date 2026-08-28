@@ -141,7 +141,7 @@ def register_child_objects_of_objects(ramona_project: RamonaProject):
     # assign the child object to object in models correctly
     for model in ramona_project.get_models_as_list():
         for object in model.get_all_objects_as_list():
-            child_yaml_files=get_child_yaml_files(object.object_config_file_path, list(model.all_yaml_config_paths_in_model))
+            child_yaml_files=get_child_yaml_files(object.object_config_file_path, model)
             objects_from_child_yaml_files=get_object_from_child_yaml_files(child_yaml_files, model)
             object.object_config[constants.object_keys.CHILD_OBJECTS]=objects_from_child_yaml_files
 
@@ -155,8 +155,11 @@ def get_object_from_child_yaml_files(child_yaml_files: list[Path], model: Model)
     return all_objects
 
 
-def get_child_yaml_files(yaml_file: Path, list_of_yaml_files: list[Path]):
-    return_list = list(list_of_yaml_files)
+def get_child_yaml_files(yaml_file: Path, model: Model):
+    if yaml_file == model.model_config_file_path:
+        return model.all_yaml_config_paths_in_model
+
+    return_list = list(model.all_yaml_config_paths_in_model)
     return_list = [ childpath for childpath in return_list if yaml_file.parent in childpath.parents ]
     return_list = [ childpath for childpath in return_list if yaml_file.parent != childpath.parent ]
     return return_list
