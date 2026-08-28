@@ -52,6 +52,12 @@ class Jinja2YamlResolver:
         self.prepocessed_string, self.placeholder_mapping=self._preprocess_yaml_with_jinja_string(self.string_to_resolve)
         self.object_to_resolve=read_yaml_from_string(self.prepocessed_string)
 
+        # TODO fix this properly? How do we know if we are resolving a model
+        if not self.starting_resolve_context.ramona_project:
+            self.starting_resolve_context.ramona_project = self.object_to_resolve
+        elif not self.starting_resolve_context.model:
+            self.starting_resolve_context.model = self.object_to_resolve
+
         # Prepare resolve_context
         self.starting_resolve_context._this=self.object_to_resolve
         return self._resolve(self.object_to_resolve, self.starting_resolve_context)
@@ -231,12 +237,15 @@ class Jinja2YamlResolver:
         elif len(args) == 2:
             model=resolve_context.ramona_project.get_model_from_key(args[0])
             object=args[1]
-
         else:
             raise Exception( "The ref argument is used with 1 or 2 arguments.")
 
+        # TODO fix this properly? How do we know if we are resolving a model
+        if not model and not resolve_context.ramona_project:
+            raise NotImplementedError("References to objects in project do not work yet")
+
         return TempRefClass(
             resolve_context.ramona_project.id if "id" in resolve_context.ramona_project.id else "",
-            model=model.id,
+            model=model["id"],
             object=object
         )

@@ -1,4 +1,6 @@
 definitions:    
+    - object1
+    - object2
     - table1
     - table2
     - table3

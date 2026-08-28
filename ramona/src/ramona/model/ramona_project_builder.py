@@ -305,6 +305,7 @@ def parent_yaml_files_sorted_highest_first(yaml_file_path: Path, model: Model):
     # First remove all child yaml paths
     parent_yaml_files=[ parent for parent in model.all_yaml_config_paths_in_model if parent.parent in yaml_file_path.parents ]
 
+    # Also remove te model config because this gets added separately
     parent_yaml_files.remove(model.model_config_file_path)
 
     # Also remove same level yaml paths because those are not parent
