@@ -5,4 +5,4 @@ database: MODEL1
 objects:
   - id: object1
   - id: object2
-    ref_naar_object1: {{ ref("object1") }}
+    ref_naar_object1: {{ ref(object1) }}

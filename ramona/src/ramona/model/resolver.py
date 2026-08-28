@@ -240,9 +240,13 @@ class Jinja2YamlResolver:
         else:
             raise Exception( "The ref argument is used with 1 or 2 arguments.")
 
-        # TODO fix this properly? How do we know if we are resolving a model
-        if not model and not resolve_context.ramona_project:
+        if not object:
+            raise Exception("Reference to object is undefined, make sure it is quoted")
+        if not model:
+            raise Exception("Reference to object is undefined, make sure it is quoted")
+        if not resolve_context.model:
             raise NotImplementedError("References to objects in project do not work yet")
+
 
         return TempRefClass(
             resolve_context.ramona_project.id if "id" in resolve_context.ramona_project.id else "",
