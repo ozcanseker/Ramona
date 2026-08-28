@@ -398,7 +398,7 @@ def resolve_extends(file_path, to_extend_string: str, ramona_project: RamonaProj
     ))
 
     for match in reversed(matches):
-        extends_path = match.group("path").strip()
+        extends_path = match.group("path").strip("\"").strip()
         has_dash = True if match.group("dash") else False
 
         indent = match.group("indent")
